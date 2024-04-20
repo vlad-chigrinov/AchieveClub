@@ -1,0 +1,6 @@
+@AchieveClub.Server_HostAddress = http://localhost:5229
+
+GET {{AchieveClub.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

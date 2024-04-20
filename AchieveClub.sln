@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AchieveClub.Server", "AchieveClub.Server\AchieveClub.Server.csproj", "{39176D75-08A0-4532-BB3B-BACDDE4C7D0B}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "achieveclub.client", "achieveclub.client\achieveclub.client.esproj", "{81EE25E1-18D2-494D-8EA1-ED25C59E6317}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{39176D75-08A0-4532-BB3B-BACDDE4C7D0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39176D75-08A0-4532-BB3B-BACDDE4C7D0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39176D75-08A0-4532-BB3B-BACDDE4C7D0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39176D75-08A0-4532-BB3B-BACDDE4C7D0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81EE25E1-18D2-494D-8EA1-ED25C59E6317}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81EE25E1-18D2-494D-8EA1-ED25C59E6317}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81EE25E1-18D2-494D-8EA1-ED25C59E6317}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{81EE25E1-18D2-494D-8EA1-ED25C59E6317}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81EE25E1-18D2-494D-8EA1-ED25C59E6317}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81EE25E1-18D2-494D-8EA1-ED25C59E6317}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B86081FA-F8C4-40F9-94A2-D3E1D479BF68}
+	EndGlobalSection
+EndGlobal
