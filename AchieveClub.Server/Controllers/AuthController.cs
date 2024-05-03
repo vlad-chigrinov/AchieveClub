@@ -63,15 +63,15 @@ namespace Promo.Server.Controllers
         {
             //Validate Club
             if (_db.Clubs.Any(c => c.Id == model.ClubId) == false)
-                return BadRequest($"Club with ClubId: {model.ClubId} not found!");
+                return Conflict("clubId");
 
             //Uniq Email
             if (_db.Users.Any(u => u.Email == model.Email))
-                return BadRequest("Email must be unique!");
+                return Conflict("email");
 
             //Uniq Name
             if (_db.Users.Any(u => u.FirstName == model.FirstName && u.LastName == model.LastName))
-                return BadRequest("Name must be unique!");
+                return Conflict("name");
 
             //Hash Password
             var passwordHash = _hasher.HashPassword(model.Password).ToString();
