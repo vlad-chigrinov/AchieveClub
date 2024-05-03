@@ -16,5 +16,33 @@ namespace AchieveClub.Server.Controllers
         {
             return Ok("pong");
         }
+
+        [Authorize(Roles = "Student")]
+        [HttpGet("Student")]
+        public ActionResult<string> GetByStudent()
+        {
+            return Ok("pong");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("Admin")]
+        public ActionResult<string> GetByAdmin()
+        {
+            return Ok("pong");
+        }
+
+        [Authorize(Roles = "Supervisor")]
+        [HttpGet("Supervisor")]
+        public ActionResult<string> GetBySupervisor()
+        {
+            return Ok("pong");
+        }
+
+        [Authorize(Roles = "TestUser")]
+        [HttpGet("TestUser")]
+        public ActionResult<string> GetByTestUser()
+        {
+            return Ok("pong");
+        }
     }
 }

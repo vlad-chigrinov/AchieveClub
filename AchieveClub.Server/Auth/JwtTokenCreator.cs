@@ -13,13 +13,13 @@ namespace AchieveClub.Server.Auth
         {
             _settings = settings;
         }
-        public string Generate(string email, string userId)
+        public string Generate(int userId, string role)
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, userId)
+                new Claim(ClaimsIdentity.DefaultNameClaimType, userId.ToString()),
+                new Claim(ClaimsIdentity.DefaultRoleClaimType, role)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));

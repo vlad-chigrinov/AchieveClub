@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace Promo.Server.Controllers
@@ -36,15 +37,12 @@ namespace Promo.Server.Controllers
         [HttpPost("login")]
         public ActionResult Login([FromBody] LoginModel model)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Email == model.Email);
+            var user = _db.Users.Include(u=>u.Role).FirstOrDefault(u => u.Email == model.Email);
 
             if (user == null) return BadRequest();
             
             if (_hasher.ValidPassword(model.Password, user.Password))
             {
-                var secureCookieOption = new CookieOptions() { HttpOnly = true, SameSite = SameSiteMode.Strict };
-                Response.Cookies.Append("X-User-Id", user.Id.ToString(), secureCookieOption);
-
                 user.RefreshToken = GenerateRefreshToken();
 
                 _db.Users.Update(user);
@@ -53,6 +51,8 @@ namespace Promo.Server.Controllers
 
                 var token = GenerateJwtByUser(user);
                 SetTokerCookiesPair(token, user.RefreshToken, Response);
+                SetUserIdCookie(user.Id, Response);
+
                 return Ok();
             }
             else return BadRequest();
@@ -85,17 +85,22 @@ namespace Promo.Server.Controllers
                 Email = model.Email,
                 ClubRefId = model.ClubId,
                 Password = passwordHash,
-                RefreshToken = GenerateRefreshToken()
+                RefreshToken = GenerateRefreshToken(),
+                RoleRefId = 1,
+                Role = _db.Roles.First(r=>r.Id == 1)
             };
 
             //add to db
             _db.Users.Add(newUser);
             if (_db.SaveChanges() != 1)
                 return BadRequest();
-            Response.Cookies.Append("X-User-Id", newUser.Id.ToString(), new CookieOptions() { HttpOnly = true, SameSite = SameSiteMode.Strict });
+
+            _db.Users.Include(u => u.Role);
 
             var token = GenerateJwtByUser(newUser);
             SetTokerCookiesPair(token, newUser.RefreshToken, Response);
+            SetUserIdCookie(newUser.Id, Response);
+
             return Ok();
         }
 
@@ -111,7 +116,7 @@ namespace Promo.Server.Controllers
             if (int.TryParse(userIdString, out var userId) == false)
                 return Unauthorized();
 
-            var user = _db.Users.FirstOrDefault(u => u.Id == userId);
+            var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Id == userId);
 
             if(user == null)
                 return Unauthorized();
@@ -127,12 +132,14 @@ namespace Promo.Server.Controllers
 
             var token = GenerateJwtByUser(user);
             SetTokerCookiesPair(token, user.RefreshToken, Response);
+            SetUserIdCookie(user.Id, Response);
+
             return Ok();
         }
 
         private string GenerateJwtByUser(UserDbo user)
         {
-            return _jwtCreator.Generate(user.Email, user.Id.ToString());
+            return _jwtCreator.Generate(user.Id, user.Role.Title);
         }
 
         private string GenerateRefreshToken()
@@ -145,6 +152,12 @@ namespace Promo.Server.Controllers
             var secureCookieOption = new CookieOptions() { HttpOnly = true, SameSite = SameSiteMode.Strict };
             Response.Cookies.Append("X-Access-Token", jwtToken, secureCookieOption);
             Response.Cookies.Append("X-Refresh-Token", refreshToken, secureCookieOption);
+        }
+
+        private void SetUserIdCookie(int userId, HttpResponse response)
+        {
+            var secureCookieOption = new CookieOptions() { HttpOnly = true, SameSite = SameSiteMode.Strict };
+            response.Cookies.Append("X-User-Id", userId.ToString(), secureCookieOption);
         }
     }
 }

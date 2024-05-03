@@ -21,6 +21,9 @@ namespace AchieveClub.Server.RepositoryItems
         public int ClubRefId { get; set; }
         [ForeignKey(nameof(ClubRefId))]
         public ClubDbo Club { get; set; }
+        public int RoleRefId { get; set; }
+        [ForeignKey(nameof(RoleRefId))]
+        public RoleDbo Role { get; set; }
 
         public UserState ToUserState()
         {
