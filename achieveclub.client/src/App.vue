@@ -14,32 +14,69 @@
             <div class="b"></div>
             <p style="font-size: 38px;">Зарегистрироватся</p>
             <div class="form">
-                <input type="text" placeholder="Имя">
-                <input type="text" placeholder="Фамилия">
-                <input type="email" placeholder="Email">
-                <input type="text" placeholder="Место обучения">
-                <input type="password" placeholder="Пароль">
-                <input type="password" placeholder="Подтверждение пароля">
-                <button id="btn-r">Регистрация</button>
+                <input type="text" placeholder="Имя" v-model="this.firstname">
+                <div v-if="this.firstname.length < 2">
+                    <p>Имя должно содержать больше 2 символов</p>
+                </div>
+                <input type="text" placeholder="Фамилия" v-model="this.lastname">
+                <div v-if="this.lastname.length < 3">
+                    <p>Фамилия должна содержать больше 3 символов</p>
+                </div>
+                <input  type="email" placeholder="Email" v-model="this.email">
+                <input type="text" placeholder="Место обучения" v-model="this.clubId">
+                <input type="password" placeholder="Пароль" v-model="this.password">
+                <input type="password" placeholder="Подтверждение пароля" v-model="this.repeatedPassword">
+                <button id="btn-r" @click="Add(), checkPasswordsEquality()">Регистрация</button>
             </div>
         </div>
     </section>
-     
 </template>
 <script>
+
     export default{
         data(){
             return{
+                firstname:'',
+                lastname:'',
+                clubId:null,
+                email:null,
+                password:null,
+                repeatedPassword: null,
+                Acc:{}
 
             }
         },
         methods:{
-            Wind(){
-                window.location.href = 'SignForm.vue';
-            }
-        }
-
+         Get(){
+         fetch("https://localhost:5173/auth/registration").then(function(responce){
+        return responce;
+        }).then(function(dataUser){
+            console.log(dataUser);        
+        })
+        },
+       
+    Add(){
+      Acc = {
+        "firstname":this.firstname,
+        "lastname":this.lastname,
+        "clubId":this.clubId,
+        "email":this.email,
+        "password":this.password
+      }
+      fetch("https://localhost:5173/auth/registration",{
+        method:'POST',
+        headers:{
+            'Contetnt-Type':'application/json; charset=utf8'
+        },
+        body:JSON.stringify(this.Acc)
+      })
+    },
+},
+    mounted(){
+        this.Get();
     }
+}
+    
 </script>
 <style>
 @font-face {
