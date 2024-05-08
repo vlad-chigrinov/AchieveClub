@@ -1,4 +1,5 @@
 using AchieveClub.Server.RepositoryItems;
+using AchieveClub.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,13 +8,14 @@ namespace AchieveClub.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UsersController(ApplicationContext db) : ControllerBase
+    public class UsersController(ApplicationContext db, UserStatisticsSevice userStatistics) : ControllerBase
     {
         private ApplicationContext _db = db;
+        private UserStatisticsSevice _userStatistics = userStatistics;
 
         [Authorize]
         [HttpGet()]
-        public ActionResult<UserDbo> GetById()
+        public ActionResult<UserState> GetCurrent()
         {
             var cookie = Request.Cookies["X-User-Id"];
             if (cookie == null || int.TryParse(cookie, out int userId) == false)
@@ -26,8 +28,17 @@ namespace AchieveClub.Server.Controllers
             }
             else
             {
-                return Ok(result.ToUserState());
+                return result.ToUserState(_userStatistics.GetXpSumById(result.Id));
             }
+        }
+        [HttpGet("all")]
+        public ActionResult<List<UserState>> GetAll()
+        {
+            return _db.Users
+                .Include(u => u.Club)
+                .ToList()
+                .Select(u => u.ToUserState(_userStatistics.GetXpSumById(u.Id)))
+                .ToList();
         }
     }
 }

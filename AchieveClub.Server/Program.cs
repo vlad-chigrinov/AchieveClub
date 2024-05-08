@@ -30,6 +30,7 @@ namespace AchieveClub.Server
 
             builder.Services.AddMemoryCache();
             builder.Services.AddTransient<AchievementStatisticsSevice>();
+            builder.Services.AddTransient<UserStatisticsSevice>();
 
             builder.Services.AddAuthentication(i =>
             {

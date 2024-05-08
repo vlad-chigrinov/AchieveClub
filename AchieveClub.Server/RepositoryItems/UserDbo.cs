@@ -25,7 +25,7 @@ namespace AchieveClub.Server.RepositoryItems
         [ForeignKey(nameof(RoleRefId))]
         public RoleDbo Role { get; set; }
 
-        public UserState ToUserState()
+        public UserState ToUserState(int xpSum)
         {
             return new UserState(
                 Id: this.Id,
@@ -34,10 +34,11 @@ namespace AchieveClub.Server.RepositoryItems
                 Avatar: this.Avatar,
                 ClubId: this.Club.Id,
                 ClubName: this.Club.Title,
-                ClubLogo: this.Club.LogoURL
+                ClubLogo: this.Club.LogoURL,
+                XpSum: xpSum
                 );
         }
     }
 
-    public record UserState(int Id, string FirstName, string LastName, string Avatar, int ClubId, string ClubName, string ClubLogo);
+    public record UserState(int Id, string FirstName, string LastName, string Avatar, int ClubId, string ClubName, string ClubLogo, int XpSum);
 }
