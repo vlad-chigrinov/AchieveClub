@@ -27,5 +27,12 @@ public class ApplicationContext(DbContextOptions options) : DbContext(options)
             .WithMany(r => r.Users)
             .HasForeignKey(u => u.RoleRefId)
             .HasPrincipalKey(r => r.Id);
+
+        modelBuilder
+            .Entity<CompletedAchievementDbo>()
+            .HasOne(ca => ca.User);
+        modelBuilder
+            .Entity<CompletedAchievementDbo>()
+            .HasOne(ca => ca.Supervisor);
     }
 }

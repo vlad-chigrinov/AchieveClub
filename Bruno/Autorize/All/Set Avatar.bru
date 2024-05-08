@@ -1,0 +1,15 @@
+meta {
+  name: Set Avatar
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/avatar
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  file: @file(C:\Users\vladi\Downloads\kamenka.png)
+}
