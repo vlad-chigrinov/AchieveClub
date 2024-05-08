@@ -53,7 +53,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "^/api/ebat": {
+      "^/api/*": {
         target,
         secure: false,
       },
