@@ -28,26 +28,37 @@ namespace AchieveClub.Server.Controllers
 
         [Authorize(Roles = "Supervisor, Admin")]
         [HttpPost]
-        public ActionResult CompleteAchievement(CompleteAchievementModel model)
+        public ActionResult CompleteAchievements(CompleteAchievementModel model)
         {
             var user = _db.Users.FirstOrDefault(u => u.Id == model.UserId);
-            var achievement = _db.Achievements.FirstOrDefault(u => u.Id == model.AchievementId);
 
-            if (user == null || achievement == null)
-                return BadRequest("UserId/AchieveId is invalid");
+            if (user == null)
+                return BadRequest("UserId is invalid");
 
-            if (_db.CompletedAchievements.Count(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id) != 0)
-                return BadRequest("Multiple achievements not supported");
+            var achievements = new List<AchievementDbo>();
+            foreach(var achieveId in model.AchievementIds)
+            {
+                var achievement = _db.Achievements.FirstOrDefault(u => u.Id == achieveId);
+
+                if(achievement == null)
+                    return BadRequest("One of AchieveIds is invalid!");
+
+                if (_db.CompletedAchievements.Count(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id) != 0)
+                    return BadRequest("Multiple achievements not supported");
+
+                achievements.Add(achievement);
+            }   
 
             var supervisorId = int.Parse(HttpContext.User.Identities.First().Name);
 
-            _db.CompletedAchievements.Add(new CompletedAchievementDbo { UserRefId = user.Id, AchieveRefId = achievement.Id, DateOfCompletion = DateTime.Now, SupervisorRefId = supervisorId });
+            foreach(var achievement in achievements)
+                _db.CompletedAchievements.Add(new CompletedAchievementDbo { UserRefId = user.Id, AchieveRefId = achievement.Id, DateOfCompletion = DateTime.Now, SupervisorRefId = supervisorId });
 
             _db.SaveChanges();
 
             return Ok();
         }
 
-        public record CompleteAchievementModel([Required, Range(1, double.PositiveInfinity)] int UserId, [Required, Range(1, double.PositiveInfinity)] int AchievementId);
+        public record CompleteAchievementModel([Required, Range(1, double.PositiveInfinity)] int UserId, [Required] List<int> AchievementIds);
     }
 }
