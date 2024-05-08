@@ -56,7 +56,7 @@
         },
        
     Add(){
-      Acc = {
+      this.Acc = {
         "firstname":this.firstname,
         "lastname":this.lastname,
         "clubId":this.clubId,
