@@ -27,7 +27,7 @@ namespace AchieveClubServer.Data.DTO
         int Xp,
         string Title,
         string Description,
-        string LogoUR,
+        string LogoURL,
         int CompletionRatio
         );
 }
