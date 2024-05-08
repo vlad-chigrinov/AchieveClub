@@ -16,5 +16,18 @@ namespace AchieveClubServer.Data.DTO
         public string Description { get; set; }
         public string LogoURL { get; set; }
         public bool IsMultiple { get; set; }
+
+        public AchievementState ToState(int ratio)
+        {
+            return new AchievementState(Id, Xp, Title, Description, LogoURL, ratio);
+        }
     }
+    public record AchievementState(
+        int Id,
+        int Xp,
+        string Title,
+        string Description,
+        string LogoUR,
+        int CompletionRatio
+        );
 }

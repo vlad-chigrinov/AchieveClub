@@ -1,18 +1,20 @@
-﻿using AchieveClubServer.Data.DTO;
+﻿using AchieveClub.Server.Services;
+using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AchieveClub.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AchievementsController(ApplicationContext db) : ControllerBase
+    public class AchievementsController(ApplicationContext db, AchievementStatisticsSevice achievementStatistics) : ControllerBase
     {
-        private ApplicationContext _db = db;
+        private readonly ApplicationContext _db = db;
+        private readonly AchievementStatisticsSevice _achievementStatistics = achievementStatistics;
 
         [HttpGet]
-        public ActionResult<List<AchievementDbo>> GetAll()
+        public ActionResult<List<AchievementState>> GetAll()
         {
-            return _db.Achievements.ToList();
+            return _db.Achievements.ToList().Select(a => a.ToState(_achievementStatistics.GetCompletionRatioById(a.Id))).ToList();
         }
     }
 }

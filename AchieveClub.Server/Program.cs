@@ -1,4 +1,5 @@
 using AchieveClub.Server.Auth;
+using AchieveClub.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -26,6 +27,9 @@ namespace AchieveClub.Server
             builder.Services.AddSingleton(jwtSettings);
             builder.Services.AddTransient<JwtTokenCreator>();
             builder.Services.AddTransient<HashService>();
+
+            builder.Services.AddMemoryCache();
+            builder.Services.AddTransient<AchievementStatisticsSevice>();
 
             builder.Services.AddAuthentication(i =>
             {
