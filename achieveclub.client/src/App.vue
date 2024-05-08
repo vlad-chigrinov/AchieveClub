@@ -12,27 +12,34 @@
             <a id="href" href="SignForm.vue">Войти в систему</a>
             <br><br>
             <div class="b"></div>
-            <p style="font-size: 38px;">Зарегистрироватся</p>
+            <p style="font-size: 28px;margin-top:2%">Зарегистрироватся</p>
             <div class="form">
+                <label>Имя</label>
                 <input type="text" placeholder="Имя" v-model="this.firstname">
-                <div v-if="this.firstname.length < 2">
+                <div class="error" v-if="this.firstname.length < 2">
                     <p>Имя должно содержать больше 2 символов</p>
                 </div>
+                <label>Фамилия</label>
                 <input type="text" placeholder="Фамилия" v-model="this.lastname">
-                <div v-if="this.lastname.length < 3">
+                <div class="error" v-if="this.lastname.length < 3">
                     <p>Фамилия должна содержать больше 3 символов</p>
                 </div>
+                <label>Email</label>
                 <input  type="email" placeholder="Email" v-model="this.email">
-                <input type="text" placeholder="Место обучения" v-model="this.clubId">
+                <select class="input">
+                        <option>Двойной Чикаго</option>
+                        <option>Дворец</option>
+                </select>
+                <label>Паполь</label>
                 <input type="password" placeholder="Пароль" v-model="this.password">
+                <label>Потверждение пароля</label>
                 <input type="password" placeholder="Подтверждение пароля" v-model="this.repeatedPassword">
-                <button id="btn-r" @click="Add(), checkPasswordsEquality()">Регистрация</button>
+                <button id="btn-r" @click="Add()">Регистрация</button>
             </div>
         </div>
     </section>
 </template>
 <script>
-
     export default{
         data(){
             return{
@@ -47,38 +54,50 @@
             }
         },
         methods:{
-         Get(){
-         fetch("https://localhost:5173/auth/registration").then(function(responce){
-        return responce;
-        }).then(function(dataUser){
-            console.log(dataUser);        
-        })
+            Add(){
+              this.Acc = {
+                "firstname":this.firstname,
+                "lastname":this.lastname,
+                "clubId":this.clubId,
+                "email":this.email,
+                "password":this.password,
+                "avatarURL":'/'
+              }
+              fetch("/api/auth/registration",{
+                method:'POST',
+                body: JSON.stringify(this.Acc),
+                headers: {
+                'Content-Type': 'application/json',
+          },
+           
+          })
+         
         },
-       
-    Add(){
-      this.Acc = {
-        "firstname":this.firstname,
-        "lastname":this.lastname,
-        "clubId":this.clubId,
-        "email":this.email,
-        "password":this.password
-      }
-      fetch("https://localhost:5173/auth/registration",{
-        method:'POST',
-        headers:{
-            'Contetnt-Type':'application/json; charset=utf8'
-        },
-        body:JSON.stringify(this.Acc)
-      })
+        GetClubId(){
+            fetch("/api/clubs/titles").then(function(responce){
+                return responce.json();
+            }).then(function(data){
+                console.log(data);
+            })
+        }
     },
-},
     mounted(){
-        this.Get();
+        this.GetClubId();
     }
 }
+
     
 </script>
 <style>
+.error{
+    width:100%;
+    height:2vh;
+    font-size:10px;
+    color:red;
+    border:1px solid red;
+    margin-top:2%;
+    padding:1%;
+}
 @font-face {
     font-family: Play;
     src: url("./fonts/Play-Bold.ttf");
@@ -127,7 +146,7 @@ section{
 }
 #href{
     color:rgba(124, 124, 124, 1);
-    font-size:36px;
+    font-size:26px;
 }
 .b{
     border-bottom:2px solid rgba(124, 124, 124, 1);
@@ -147,7 +166,12 @@ section{
 }
 input{
     width:100%;
-    height:8vh;
+    height:4vh;
+    margin-top: 2%;
+}
+.input{
+    width:100%;
+    height:4vh;
     margin-top: 2%;
 }
 </style>
