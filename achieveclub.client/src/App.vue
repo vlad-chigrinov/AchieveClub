@@ -14,35 +14,37 @@
       <div class="b"></div>
       <p style="font-size: 28px; margin-top: 2%">Зарегистрироватся</p>
       <div class="form">
-        <label>Имя</label>
-        <input type="text" placeholder="Имя" v-model="firstname" />
+        <label id="l1">Имя</label>
+        <input type="text" placeholder="Имя" v-model="this.firstname" />
         <div class="error" v-if="firstname.length < 2">
           <p>Имя должно содержать больше 2 символов</p>
         </div>
 
         <label>Фамилия</label>
-        <input type="text" placeholder="Фамилия" v-model="lastname" />
+        <input type="text" placeholder="Фамилия" v-model="this.lastname" />
         <div class="error" v-if="lastname.length < 3">
           <p>Фамилия должна содержать больше 3 символов</p>
         </div>
-
         <label>Email</label>
-        <input type="email" placeholder="Email" v-model="email" />
+        <input type="email" placeholder="Email" v-model="this.email" />
         <select class="input">
           <option></option>
           <option></option>
         </select>
         <label>Паполь</label>
-        <input type="password" placeholder="Пароль" v-model="password" />
+        <input type="password" placeholder="Пароль" v-model="this.password" />
         <label>Потверждение пароля</label>
-        <input type="password" placeholder="Подтверждение пароля" v-model="repeatedPassword" />
+        <input type="password" placeholder="Подтверждение пароля" v-model="this.repeatedPassword" />
+        <div class="error" v-if="this.password != this.repeatedPassword">
+          <p>Пароли должны совпадать</p>
+        </div>
         <button id="btn-r" @click="Add()">Регистрация</button>
       </div>
     </div>
   </section>
 </template>
 <script lang="ts">
-import type { strict } from 'assert';
+
 
 //import formOne from 'SignForm.vue'
 type ClubTitle = {title:string, id:number}
@@ -56,7 +58,7 @@ type ClubTitle = {title:string, id:number}
                 password:null,
                 repeatedPassword: null,
                 Acc:{},
-                clubTitles:Array<ClubTitle>,
+                clubTitles:Array<ClubTitle>
                
                
 
@@ -96,9 +98,15 @@ type ClubTitle = {title:string, id:number}
 }
 </script>
 <style>
+#l1{
+  margin-top:5%;
+}
+label{
+  font-size:15px;
+}
 .error {
   width: 100%;
-  height: 2vh;
+  height: 3vh;
   font-size: 10px;
   color: red;
   border: 1px solid red;

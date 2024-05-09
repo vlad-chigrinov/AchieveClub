@@ -20,7 +20,28 @@
        </div>
     </section>
 </template>
+<script>
+   export default{
+      data(){
+         return{
 
+         }
+      },
+      method:{
+         Get(){
+            fetch("/api/auth/registration",{
+                method:'POST',
+                body: JSON.parse(this.Acc),
+                headers: {
+                'Content-Type': 'application/json',
+            }),
+         }
+      },
+      mounted(){
+
+      }
+   }
+</script>
 <style>
 @font-face {
    font-family: Play;
