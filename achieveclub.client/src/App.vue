@@ -32,7 +32,10 @@
           <option></option>
         </select>
         <label>Паполь</label>
-        <input type="password" placeholder="Пароль" v-model="this.password" />
+        <input type="password" placeholder="Пароль" v-model="this.password"/>
+        <div class="error" v-if="this.password < 6">
+          <p>Пароль должен содержать минимум 6 цифр</p>
+        </div>
         <label>Потверждение пароля</label>
         <input type="password" placeholder="Подтверждение пароля" v-model="this.repeatedPassword" />
         <div class="error" v-if="this.password != this.repeatedPassword">

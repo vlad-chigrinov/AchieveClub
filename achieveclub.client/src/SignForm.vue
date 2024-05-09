@@ -28,20 +28,17 @@
          }
       },
       method:{
-         Get(){
-            fetch("/api/auth/registration",{
-                method:'POST',
-                body: JSON.parse(this.Acc),
-                headers: {
-                'Content-Type': 'application/json',
-            }),
-         }
-      },
-      mounted(){
+         Add(){
+              fetch("/api/auth/registration",{
+                method:'POST'})
 
-      }
+       },
+    }
    }
+
+  
 </script>
+
 <style>
 @font-face {
    font-family: Play;
