@@ -11,8 +11,8 @@
        <div class="form-register">
            <p style="font-size: 48px;">Войти в систему</p>
            <div class="form">
-               <input type="email" placeholder="Email">
-               <input type="password" placeholder="Пароль">
+               <input v-model="this.email"type="email" placeholder="Email">
+               <input v-model="this.password"type="password" placeholder="Пароль">
                <button id="btn-r">Войти</button>
             </div>
             <div class="b"></div>
@@ -24,13 +24,17 @@
    export default{
       data(){
          return{
-
+           email:null,
+            password:null
+         
          }
       },
       method:{
          Add(){
               fetch("/api/auth/registration",{
-                method:'POST'})
+                method:'POST',
+                 body:JSON.sringify(this.email,this.password)
+              })
 
        },
     }
