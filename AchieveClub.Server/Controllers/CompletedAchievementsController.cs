@@ -1,4 +1,5 @@
 ﻿using AchieveClub.Server.RepositoryItems;
+using AchieveClub.Server.Services;
 using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,9 +9,11 @@ namespace AchieveClub.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CompletedAchievementsController(ApplicationContext db) : ControllerBase
+    public class CompletedAchievementsController(ApplicationContext db, AchievementStatisticsSevice achievementStatistics, UserStatisticsSevice userStatistics) : ControllerBase
     {
-        private ApplicationContext _db = db;
+        private readonly ApplicationContext _db = db;
+        private readonly AchievementStatisticsSevice _achievementStatistics = achievementStatistics;
+        private readonly UserStatisticsSevice _userStatistics = userStatistics;
 
         [Authorize]
         [HttpGet]
@@ -55,6 +58,10 @@ namespace AchieveClub.Server.Controllers
                 _db.CompletedAchievements.Add(new CompletedAchievementDbo { UserRefId = user.Id, AchieveRefId = achievement.Id, DateOfCompletion = DateTime.Now, SupervisorRefId = supervisorId });
 
             _db.SaveChanges();
+
+            _userStatistics.UpdateXpSumById(model.UserId);
+            foreach( var achievementId in model.AchievementIds)
+                _achievementStatistics.UpdateCompletedRatioById(achievementId);
 
             return Ok();
         }

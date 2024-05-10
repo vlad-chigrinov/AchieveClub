@@ -16,10 +16,15 @@ namespace AchieveClub.Server.Services
             }
             else
             {
-                int calculatedRatio = CalculateCompletionRatio(id);
-                _cache.Set<int>($"achievement:{id}", calculatedRatio);
-                return calculatedRatio;
+                return UpdateCompletedRatioById(id);
             }
+        }
+
+        public int UpdateCompletedRatioById(int id)
+        {
+            int calculatedRatio = CalculateCompletionRatio(id);
+            _cache.Set<int>($"achievement:{id}", calculatedRatio);
+            return calculatedRatio;
         }
 
         private int CalculateCompletionRatio(int id)

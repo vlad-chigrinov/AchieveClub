@@ -16,10 +16,15 @@ namespace AchieveClub.Server.Services
             }
             else
             {
-                int calculatedXpSum = CalculateXpSum(id);
-                _cache.Set<int>($"user:{id}", calculatedXpSum);
-                return calculatedXpSum;
+                return UpdateXpSumById(id);
             }
+        }
+
+        public int UpdateXpSumById(int id)
+        {
+            int calculatedXpSum = CalculateXpSum(id);
+            _cache.Set<int>($"user:{id}", calculatedXpSum);
+            return calculatedXpSum;
         }
 
         private int CalculateXpSum(int id)
