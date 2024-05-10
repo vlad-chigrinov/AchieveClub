@@ -30,14 +30,15 @@ namespace AchieveClub.Server.Services
 
         private int CalculateAvgXp(int id)
         {
-            return _db.Clubs
+            double avgXp = _db.Clubs
                 .Where(c=>c.Id == id)
                 .Include(c => c.Users)
                 .ThenInclude(u=>u.Role)
                 .First()
                 .Users
                 .Where(u=>u.Role.Title=="Student")
-                .Sum(u=>_userStatistics.GetXpSumById(u.Id));
+                .Average(u=>_userStatistics.GetXpSumById(u.Id));
+            return (int)Math.Round(avgXp);
         }
     }
 }
