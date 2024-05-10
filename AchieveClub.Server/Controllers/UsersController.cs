@@ -14,7 +14,7 @@ namespace AchieveClub.Server.Controllers
         private UserStatisticsSevice _userStatistics = userStatistics;
 
         [Authorize]
-        [HttpGet()]
+        [HttpGet("current")]
         public ActionResult<UserState> GetCurrent()
         {
             var cookie = Request.Cookies["X-User-Id"];
@@ -31,7 +31,7 @@ namespace AchieveClub.Server.Controllers
                 return result.ToUserState(_userStatistics.GetXpSumById(result.Id));
             }
         }
-        [HttpGet("all")]
+        [HttpGet()]
         public ActionResult<List<UserState>> GetAll()
         {
             return _db.Users
