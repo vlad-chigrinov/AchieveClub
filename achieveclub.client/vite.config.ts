@@ -56,7 +56,7 @@ export default defineConfig({
       "^/api/*": {
         target,
         secure: false,
-      }
+      },
     },
     port: 5173,
     https: {
