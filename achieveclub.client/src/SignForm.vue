@@ -20,27 +20,22 @@
        </div>
     </section>
 </template>
-<script>
+
+<script lang="ts">
    export default{
       data(){
          return{
-           email:null,
-            password:null
+           email:'',
+            password:''
          
          }
       },
-      method:{
-         Add(){
-              fetch("/api/auth/registration",{
-                method:'POST',
-                 body:JSON.sringify(this.email,this.password)
-              })
-
-       },
-    }
-   }
-
-  
+      methods:{
+         Checklogin(){
+            fetch("/api/auth/login",{method:'POST',body: JSON.stringify(this.email,this.password),headers: {'Content-Type': 'application/json',},})  
+         }
+     }
+   
 </script>
 
 <style>

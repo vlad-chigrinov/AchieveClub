@@ -10,35 +10,36 @@
   <section>
     <div class="form-register">
       <a id="href" href="SignForm.vue">Войти в систему</a>
-      <br /><br />
+      <br/><br />
       <div class="b"></div>
       <p style="font-size: 28px; margin-top: 2%">Зарегистрироватся</p>
       <div class="form">
         <label id="l1">Имя</label>
-        <input type="text" placeholder="Имя" v-model="this.firstname" />
+        <input type="text" placeholder="Имя" v-model="firstname" />
         <div class="error" v-if="firstname.length < 2">
           <p>Имя должно содержать больше 2 символов</p>
         </div>
 
         <label>Фамилия</label>
-        <input type="text" placeholder="Фамилия" v-model="this.lastname" />
+        <input type="text" placeholder="Фамилия" v-model="lastname" />
         <div class="error" v-if="lastname.length < 3">
           <p>Фамилия должна содержать больше 3 символов</p>
         </div>
         <label>Email</label>
-        <input type="email" placeholder="Email" v-model="this.email" />
+        <input type="email" placeholder="Email" v-model="email" />
         <select class="input">
-          <option></option>
+          <option  v-for="todo in clubTitles" :key="todo.title">{{todo}}</option>
+
           <option></option>
         </select>
         <label>Паполь</label>
-        <input type="password" placeholder="Пароль" v-model="this.password"/>
-        <div class="error" v-if="this.password < 6">
+        <input type="password" placeholder="Пароль" v-model="password"/>
+        <div class="error" v-if="password.length < 6">
           <p>Пароль должен содержать минимум 6 цифр</p>
         </div>
         <label>Потверждение пароля</label>
-        <input type="password" placeholder="Подтверждение пароля" v-model="this.repeatedPassword" />
-        <div class="error" v-if="this.password != this.repeatedPassword">
+        <input type="password" placeholder="Подтверждение пароля" v-model="repeatedPassword" />
+        <div class="error" v-if="password != repeatedPassword">
           <p>Пароли должны совпадать</p>
         </div>
         <button id="btn-r" @click="Add()">Регистрация</button>
@@ -58,7 +59,7 @@ type ClubTitle = {title:string, id:number}
                 lastname:'',
                 clubId:null,
                 email:null,
-                password:null,
+                password:'',
                 repeatedPassword: null,
                 Acc:{},
                 clubTitles:Array<ClubTitle>
@@ -78,14 +79,7 @@ type ClubTitle = {title:string, id:number}
                 "password":this.password,
                 "avatarURL":'/'
               }
-              fetch("/api/auth/registration",{
-                method:'POST',
-                body: JSON.stringify(this.Acc),
-                headers: {
-                'Content-Type': 'application/json',
-          },
-
-          })
+              fetch("/api/auth/registration",{method:'POST',body: JSON.stringify(this.Acc),headers: {'Content-Type': 'application/json',},})
 
         },
         async GetClubId(){
