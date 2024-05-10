@@ -9,7 +9,8 @@
   </header>
   <section>
     <div class="form-register">
-      <a id="href" href="SignForm.vue">Войти в систему</a>
+      <RouterLink to="/Sign" id="href">Войти в систему</RouterLink>
+      <!-- <a id="href" href="SignForm.vue"></a> -->
       <br/><br />
       <div class="b"></div>
       <p style="font-size: 28px; margin-top: 2%">Зарегистрироватся</p>
@@ -27,10 +28,9 @@
         </div>
         <label>Email</label>
         <input type="email" placeholder="Email" v-model="email" />
-        <select class="input">
-          <option  v-for="todo in clubTitles" :key="todo.title">{{todo}}</option>
-
-          <option></option>
+        <select class="input" v-model="clubId">
+           <option  v-for="todo in clubTitles" :key="todo.length" >{{todo}}</option> 
+           <option  v-for="todo in clubTitles" :key="todo.length">{{todo}}</option> 
         </select>
         <label>Паполь</label>
         <input type="password" placeholder="Пароль" v-model="password"/>
@@ -50,8 +50,10 @@
 <script lang="ts">
 
 
-//import formOne from 'SignForm.vue'
+
+//import formOne from 'components/SignView.vue'
 type ClubTitle = {title:string, id:number}
+
     export default{
         data(){
             return{

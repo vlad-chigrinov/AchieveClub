@@ -1,5 +1,6 @@
+
 <template>
-   <header>
+<header>
        <div class="log">
            <img src="./assets/LOGO.png" alt="">
        </div>
@@ -11,8 +12,8 @@
        <div class="form-register">
            <p style="font-size: 48px;">Войти в систему</p>
            <div class="form">
-               <input v-model="this.email"type="email" placeholder="Email">
-               <input v-model="this.password"type="password" placeholder="Пароль">
+               <input v-model="email" type="email" placeholder="Email">
+               <input v-model="password" type="password" placeholder="Пароль">
                <button id="btn-r">Войти</button>
             </div>
             <div class="b"></div>
@@ -22,24 +23,28 @@
 </template>
 
 <script lang="ts">
-   export default{
-      data(){
-         return{
-           email:'',
-            password:''
-         
-         }
-      },
-      methods:{
-         Checklogin(){
-            fetch("/api/auth/login",{method:'POST',body: JSON.stringify(this.email,this.password),headers: {'Content-Type': 'application/json',},})  
-         }
-     }
-   
+export default{
+   data(){
+      return{
+         email:'',
+         password:'',
+         ck:{}
+      }
+   },
+   methods:{
+      Add(){
+              this.ck={
+               email:this.email,
+               password:this.password
+              }
+              fetch("/api/auth/registration",{method:'POST',body: JSON.stringify(this.ck),headers: {'Content-Type': 'application/json',},})}
+   }
+}
+
 </script>
 
-<style>
-@font-face {
+<style scoped>
+    @font-face {
    font-family: Play;
    src: url("./fonts/Play-Bold.ttf");
 }
