@@ -29,8 +29,9 @@ namespace AchieveClub.Server
             builder.Services.AddTransient<HashService>();
 
             builder.Services.AddMemoryCache();
-            builder.Services.AddTransient<AchievementStatisticsSevice>();
-            builder.Services.AddTransient<UserStatisticsSevice>();
+            builder.Services.AddTransient<AchievementStatisticsService>();
+            builder.Services.AddTransient<UserStatisticsService>();
+            builder.Services.AddTransient<ClubStatisticsService>();
 
             builder.Services.AddAuthentication(i =>
             {

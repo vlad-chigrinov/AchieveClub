@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AchieveClub.Server.Services
 {
-    public class AchievementStatisticsSevice(IMemoryCache cache, ApplicationContext db)
+    public class AchievementStatisticsService(IMemoryCache cache, ApplicationContext db)
     {
         private readonly IMemoryCache _cache = cache;
         private readonly ApplicationContext _db = db;

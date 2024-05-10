@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AchieveClub.Server.RepositoryItems
 {
@@ -16,5 +11,12 @@ namespace AchieveClub.Server.RepositoryItems
         public string Address { get; set; }
         public string LogoURL { get; set; }
         public List<UserDbo> Users { get; set; }
+
+        public ClubState ToState(int avgXp)
+        {
+            return new ClubState(Id, Title, LogoURL, avgXp);
+        }
     }
+
+    public record ClubState(int Id, string Title, string LogoURL, int avgXp);
 }

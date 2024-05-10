@@ -6,10 +6,10 @@ namespace AchieveClub.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AchievementsController(ApplicationContext db, AchievementStatisticsSevice achievementStatistics) : ControllerBase
+    public class AchievementsController(ApplicationContext db, AchievementStatisticsService achievementStatistics) : ControllerBase
     {
         private readonly ApplicationContext _db = db;
-        private readonly AchievementStatisticsSevice _achievementStatistics = achievementStatistics;
+        private readonly AchievementStatisticsService _achievementStatistics = achievementStatistics;
 
         [HttpGet]
         public ActionResult<List<AchievementState>> GetAll()

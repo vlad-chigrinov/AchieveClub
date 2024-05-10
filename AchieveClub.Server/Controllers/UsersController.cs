@@ -8,10 +8,10 @@ namespace AchieveClub.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UsersController(ApplicationContext db, UserStatisticsSevice userStatistics) : ControllerBase
+    public class UsersController(ApplicationContext db, UserStatisticsService userStatistics) : ControllerBase
     {
         private ApplicationContext _db = db;
-        private UserStatisticsSevice _userStatistics = userStatistics;
+        private UserStatisticsService _userStatistics = userStatistics;
 
         [Authorize]
         [HttpGet("current")]

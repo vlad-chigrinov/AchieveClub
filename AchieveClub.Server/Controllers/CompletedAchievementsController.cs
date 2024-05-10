@@ -9,11 +9,12 @@ namespace AchieveClub.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CompletedAchievementsController(ApplicationContext db, AchievementStatisticsSevice achievementStatistics, UserStatisticsSevice userStatistics) : ControllerBase
+    public class CompletedAchievementsController(ApplicationContext db, AchievementStatisticsService achievementStatistics, UserStatisticsService userStatistics, ClubStatisticsService clubStatistics) : ControllerBase
     {
         private readonly ApplicationContext _db = db;
-        private readonly AchievementStatisticsSevice _achievementStatistics = achievementStatistics;
-        private readonly UserStatisticsSevice _userStatistics = userStatistics;
+        private readonly AchievementStatisticsService _achievementStatistics = achievementStatistics;
+        private readonly UserStatisticsService _userStatistics = userStatistics;
+        private readonly ClubStatisticsService _clubStatistics = clubStatistics;
 
         [Authorize]
         [HttpGet]
@@ -60,6 +61,7 @@ namespace AchieveClub.Server.Controllers
             _db.SaveChanges();
 
             _userStatistics.UpdateXpSumById(model.UserId);
+            _clubStatistics.UpdateAvgXpById(user.ClubRefId);
             foreach( var achievementId in model.AchievementIds)
                 _achievementStatistics.UpdateCompletedRatioById(achievementId);
 
