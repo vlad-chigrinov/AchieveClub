@@ -21,7 +21,7 @@ namespace AchieveClub.Server.Controllers
             if (cookie == null || int.TryParse(cookie, out int userId) == false)
                 return BadRequest("User not found!");
 
-            var result = _db.Users.Include(u=>u.Club).FirstOrDefault(u => u.Id == userId);
+            var result = _db.Users.Include(u => u.Club).FirstOrDefault(u => u.Id == userId);
             if (result == null)
             {
                 return BadRequest("User not found!");
@@ -31,7 +31,22 @@ namespace AchieveClub.Server.Controllers
                 return result.ToUserState(_userStatistics.GetXpSumById(result.Id));
             }
         }
-        [HttpGet()]
+
+        [HttpGet("{userId}")]
+        public ActionResult<UserState> GetById([FromRoute] int userId)
+        {
+            var result = _db.Users.Include(u => u.Club).FirstOrDefault(u => u.Id == userId);
+            if (result == null)
+            {
+                return BadRequest("User not found!");
+            }
+            else
+            {
+                return result.ToUserState(_userStatistics.GetXpSumById(result.Id));
+            }
+        }
+
+        [HttpGet]
         public ActionResult<List<UserState>> GetAll()
         {
             return _db.Users
