@@ -23,7 +23,8 @@
 </template>
 
 <script lang="ts">
-export default{
+import {defineComponent} from 'vue'
+export default defineComponent({
    data(){
       return{
          email:'',
@@ -39,7 +40,7 @@ export default{
               }
               fetch("/api/auth/registration",{method:'POST',body: JSON.stringify(this.ck),headers: {'Content-Type': 'application/json',},})}
    }
-}
+})
 
 </script>
 

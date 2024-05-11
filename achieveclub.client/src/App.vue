@@ -9,8 +9,8 @@
   </header>
   <section>
     <div class="form-register">
-      <RouterLink to="SignForm.vue" id="href">Войти в систему</RouterLink>
-      <!-- <a id="href" href="SignForm.vue"></a> -->
+      
+      <a id="href" href="SignForm.vue">Войти в систему</a>
       <br/><br />
       <div class="b"></div>
       <p style="font-size: 28px; margin-top: 2%">Зарегистрироватся</p>
@@ -30,7 +30,7 @@
         <input type="email" placeholder="Email" v-model="email" />
 
         <select class="input" v-model="clubId">
-           <option v-for="todo in clubTitles" :key="todo.length">{{todo.title}}</option> 
+           <option  v-for="club in clubTitles" :key="club.id">{{club.title}}</option> 
         </select>
 
         <label>Паполь</label>
@@ -54,8 +54,8 @@
 
 //import formOne from 'components/SignView.vue'
 type ClubTitle = {title:string, id:number}
-
-    export default{
+import {defineComponent} from 'vue'
+    export default defineComponent({
         data(){
             return{
                 firstname:'',
@@ -65,8 +65,7 @@ type ClubTitle = {title:string, id:number}
                 password:'',
                 repeatedPassword: null,
                 Acc:{},
-                clubTitles:Array<ClubTitle>,
-                todo:Array<ClubTitle>
+                clubTitles: [] as ClubTitle[]
                
 
 
@@ -82,7 +81,11 @@ type ClubTitle = {title:string, id:number}
                 "password":this.password,
                 "avatarURL":'/'
               }
-              fetch("/api/auth/registration",{method:'POST',body: JSON.stringify(this.Acc),headers: {'Content-Type': 'application/json',},})
+              fetch("/api/auth/registration",{
+                method:'POST',
+                body: JSON.stringify(this.Acc),
+                headers: {'Content-Type': 'application/json',}
+                ,})
 
         },
         async GetClubId(){
@@ -95,7 +98,7 @@ type ClubTitle = {title:string, id:number}
     mounted(){
         this.GetClubId();
     }
-}
+})
 </script>
 <style>
 #l1{
@@ -104,6 +107,10 @@ type ClubTitle = {title:string, id:number}
 label{
   font-size:15px;
 }
+#q1{
+  color:none;
+}
+
 .error {
   width: 100%;
   height: 3vh;
