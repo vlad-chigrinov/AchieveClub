@@ -9,7 +9,7 @@
   </header>
   <section>
     <div class="form-register">
-      <RouterLink to="/Sign" id="href">Войти в систему</RouterLink>
+      <RouterLink to="SignForm.vue" id="href">Войти в систему</RouterLink>
       <!-- <a id="href" href="SignForm.vue"></a> -->
       <br/><br />
       <div class="b"></div>
@@ -28,10 +28,11 @@
         </div>
         <label>Email</label>
         <input type="email" placeholder="Email" v-model="email" />
+
         <select class="input" v-model="clubId">
-           <option  v-for="todo in clubTitles" :key="todo.length" >{{todo}}</option> 
-           <option  v-for="todo in clubTitles" :key="todo.length">{{todo}}</option> 
+           <option v-for="todo in clubTitles" :key="todo.length">{{todo.title}}</option> 
         </select>
+
         <label>Паполь</label>
         <input type="password" placeholder="Пароль" v-model="password"/>
         <div class="error" v-if="password.length < 6">
@@ -64,8 +65,8 @@ type ClubTitle = {title:string, id:number}
                 password:'',
                 repeatedPassword: null,
                 Acc:{},
-                clubTitles:Array<ClubTitle>
-               
+                clubTitles:Array<ClubTitle>,
+                todo:Array<ClubTitle>
                
 
 
