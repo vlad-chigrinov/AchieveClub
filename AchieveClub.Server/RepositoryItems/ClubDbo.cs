@@ -12,11 +12,17 @@ namespace AchieveClub.Server.RepositoryItems
         public string LogoURL { get; set; }
         public List<UserDbo> Users { get; set; }
 
-        public ClubState ToState(int avgXp)
+        public SmallClubState ToSmallState(int avgXp)
         {
-            return new ClubState(Id, Title, LogoURL, avgXp);
+            return new SmallClubState(Id, Title, LogoURL, avgXp);
+        }
+
+        public ClubState ToState(int avgXp, List<UserState> users)
+        {
+            return new ClubState(Id, Title, Description, Address, LogoURL, avgXp, users);
         }
     }
 
-    public record ClubState(int Id, string Title, string LogoURL, int avgXp);
+    public record SmallClubState(int Id, string Title, string LogoURL, int AvgXp);
+    public record ClubState(int Id, string Title, string Description, string Address, string LogoURL, int AvgXp, List<UserState> Users);
 }
