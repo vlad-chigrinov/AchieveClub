@@ -5,7 +5,11 @@ meta {
 }
 
 get {
-  url: {{base_url}}/clubs/1
+  url: {{base_url}}/clubs/{{clubId}}
   body: none
   auth: none
+}
+
+vars:pre-request {
+  clubId: 1
 }
