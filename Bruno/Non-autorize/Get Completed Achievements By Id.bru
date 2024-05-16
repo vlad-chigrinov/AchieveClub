@@ -1,0 +1,15 @@
+meta {
+  name: Get Completed Achievements By Id
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/CompletedAchievements/{{userId}}
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  userId: 218
+}

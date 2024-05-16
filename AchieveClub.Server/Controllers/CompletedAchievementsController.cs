@@ -17,13 +17,22 @@ namespace AchieveClub.Server.Controllers
         private readonly ClubStatisticsService _clubStatistics = clubStatistics;
 
         [Authorize]
-        [HttpGet]
-        public ActionResult<List<CompletedAchievementState>> GetByUserId()
+        [HttpGet("current")]
+        public ActionResult<List<CompletedAchievementState>> GetForCurrentUser()
         {
             var cookie = Request.Cookies["X-User-Id"];
             if (cookie == null || int.TryParse(cookie, out int userId) == false)
                 return BadRequest("User not found!");
 
+            if (_db.Users.Count(x => x.Id == userId) == 0)
+                return BadRequest("User not found!");
+
+            return _db.CompletedAchievements.Where(ca => ca.UserRefId == userId).Select(ca => new CompletedAchievementState(ca.AchieveRefId)).ToList();
+        }
+
+        [HttpGet("{userId}")]
+        public ActionResult<List<CompletedAchievementState>> GetForCurrentUser([FromRoute] int userId)
+        {
             if (_db.Users.Count(x => x.Id == userId) == 0)
                 return BadRequest("User not found!");
 
