@@ -40,6 +40,37 @@ namespace AchieveClub.Server.Controllers
         }
 
         [Authorize(Roles = "Supervisor, Admin")]
+        [HttpDelete]
+        public ActionResult CalcelCompleteAchievements(CompleteAchievementModel model)
+        {
+            var user = _db.Users.FirstOrDefault(u => u.Id == model.UserId);
+
+            if (user == null)
+                return BadRequest("UserId is invalid");
+
+            foreach(var achieveId in model.AchievementIds)
+            {
+                var achievement = _db.CompletedAchievements.FirstOrDefault(ca=>ca.UserRefId == model.UserId && ca.AchieveRefId == achieveId);
+
+                if(achievement == null)
+                    return BadRequest("One of AchieveIds is invalid or not completed!");
+
+                _db.CompletedAchievements.Remove(achievement);
+            }   
+
+            var supervisorId = int.Parse(HttpContext.User.Identities.First().Name);
+
+            _db.SaveChanges();
+
+            _userStatistics.UpdateXpSumById(model.UserId);
+            _clubStatistics.UpdateAvgXpById(user.ClubRefId);
+            foreach( var achievementId in model.AchievementIds)
+                _achievementStatistics.UpdateCompletedRatioById(achievementId);
+
+            return Ok();
+        }
+
+        [Authorize(Roles = "Supervisor, Admin")]
         [HttpPost]
         public ActionResult CompleteAchievements(CompleteAchievementModel model)
         {
