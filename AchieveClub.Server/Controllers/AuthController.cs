@@ -1,12 +1,11 @@
 ﻿using AchieveClub.Server;
 using AchieveClub.Server.Auth;
 using AchieveClub.Server.RepositoryItems;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+using AchieveClub.Server.Services;
+using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MimeKit;
 using System.ComponentModel.DataAnnotations;
 
 namespace Promo.Server.Controllers
@@ -16,31 +15,34 @@ namespace Promo.Server.Controllers
     public class AuthController(
         JwtTokenCreator jwtCreator,
         ApplicationContext db,
-        HashService hasher
+        HashService hasher,
+        EmailProofService emailProof
         ) : ControllerBase
     {
         private readonly JwtTokenCreator _jwtCreator = jwtCreator;
         private readonly ApplicationContext _db = db;
         private readonly HashService _hasher = hasher;
+        private readonly EmailProofService _emailProof = emailProof;
 
         public record LoginModel([Required, EmailAddress] string Email, [Required, StringLength(100, MinimumLength = 6)] string Password);
         public record RegistrationModel(
             [Required, StringLength(100, MinimumLength = 2)] string FirstName,
             [Required, StringLength(100, MinimumLength = 5)] string LastName,
             [Required, Range(1, double.PositiveInfinity)] int ClubId,
-            [Required, EmailAddress] string Email,
             [Required, MinLength(6)] string Password,
-            [Required] string AvatarURL
+            [Required] string AvatarURL,
+            [Required] ProofCodeModel EmailAndProof
         );
 
+        public record ProofCodeModel([Required, EmailAddress] string EmailAddress, [Required, Range(1000, 9999)] int ProofCode);
 
         [HttpPost("login")]
         public ActionResult Login([FromBody] LoginModel model)
         {
-            var user = _db.Users.Include(u=>u.Role).FirstOrDefault(u => u.Email == model.Email);
+            var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Email == model.Email);
 
             if (user == null) return BadRequest();
-            
+
             if (_hasher.ValidPassword(model.Password, user.Password))
             {
                 user.RefreshToken = GenerateRefreshToken();
@@ -66,8 +68,12 @@ namespace Promo.Server.Controllers
                 return Conflict("clubId");
 
             //Uniq Email
-            if (_db.Users.Any(u => u.Email == model.Email))
+            if (_db.Users.Any(u => u.Email == model.EmailAndProof.EmailAddress))
                 return Conflict("email");
+
+            //Proof Code
+            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode))
+                return Unauthorized();
 
             //Uniq Name
             if (_db.Users.Any(u => u.FirstName == model.FirstName && u.LastName == model.LastName))
@@ -82,12 +88,12 @@ namespace Promo.Server.Controllers
                 FirstName = model.FirstName,
                 LastName = model.LastName,
                 Avatar = model.AvatarURL,
-                Email = model.Email,
+                Email = model.EmailAndProof.EmailAddress,
                 ClubRefId = model.ClubId,
                 Password = passwordHash,
                 RefreshToken = GenerateRefreshToken(),
                 RoleRefId = 1,
-                Role = _db.Roles.First(r=>r.Id == 1)
+                Role = _db.Roles.First(r => r.Id == 1)
             };
 
             //add to db
@@ -104,8 +110,56 @@ namespace Promo.Server.Controllers
             return Ok();
         }
 
+        [HttpPost("SendProofCode")]
+        public async Task<ActionResult> SendProofCode([FromBody] string emailAddress)
+        {
+            if (_db.Users.Any(u => u.Email == emailAddress))
+                return Conflict("email");
+
+            Console.WriteLine(emailAddress);
+
+            using var emailMessage = new MimeMessage();
+
+            emailMessage.From.Add(new MailboxAddress("no-reply", "no-reply@sskef.site"));
+            emailMessage.To.Add(new MailboxAddress("", emailAddress));
+            emailMessage.Subject = "Подтверждение регистрации";
+            int proofCode = _emailProof.GenerateProofCode(emailAddress);
+            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html)
+            {
+                Text = $"<h3>Ваш код: <code>{proofCode}</code></h3>"
+            };
+
+            using (var client = new SmtpClient())
+            {
+                await client.ConnectAsync("mailbe06.hoster.by.", 465, true);
+                await client.AuthenticateAsync("no-reply@sskef.site", "W3+)lSFhs3");
+                try
+                {
+                    await client.SendAsync(emailMessage);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex);
+                }
+
+                await client.DisconnectAsync(true);
+            }
+
+            return Ok();
+        }
+
+        [HttpPost("ValidateProofCode")]
+        public ActionResult ValidateProofCode([FromBody] ProofCodeModel model)
+        {
+
+            if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode))
+                return Ok();
+            else
+                return BadRequest();
+        }
+
         [HttpGet("refresh")]
-        public IActionResult Refresh()
+        public ActionResult Refresh()
         {
             var refreshToker = Request.Cookies["X-Refresh-Token"];
             var userIdString = Request.Cookies["X-User-Id"];
@@ -118,10 +172,10 @@ namespace Promo.Server.Controllers
 
             var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Id == userId);
 
-            if(user == null)
+            if (user == null)
                 return Unauthorized();
 
-            if(user.RefreshToken == null || user.RefreshToken != refreshToker)
+            if (user.RefreshToken == null || user.RefreshToken != refreshToker)
                 return Unauthorized();
 
             user.RefreshToken = GenerateRefreshToken();

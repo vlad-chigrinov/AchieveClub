@@ -27,6 +27,7 @@ namespace AchieveClub.Server
             builder.Services.AddSingleton(jwtSettings);
             builder.Services.AddTransient<JwtTokenCreator>();
             builder.Services.AddTransient<HashService>();
+            builder.Services.AddTransient<EmailProofService>();
 
             builder.Services.AddMemoryCache();
             builder.Services.AddTransient<AchievementStatisticsService>();
@@ -93,12 +94,8 @@ namespace AchieveClub.Server
                 RequestPath = "/StaticFiles"
             });
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 

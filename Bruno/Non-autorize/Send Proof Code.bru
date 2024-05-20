@@ -1,0 +1,19 @@
+meta {
+  name: Send Proof Code
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/auth/SendProofCode
+  body: json
+  auth: none
+}
+
+body:json {
+  "vladislav.chigrinov@gmail.com"
+}
+
+body:text {
+  vladislav.chigrinov@gmail.com
+}
