@@ -24,16 +24,16 @@ namespace AchieveClub.Server.Controllers
             if (cookie == null || int.TryParse(cookie, out int userId) == false)
                 return BadRequest("User not found!");
 
-            if (_db.Users.Count(x => x.Id == userId) == 0)
+            if (_db.Users.Any(x => x.Id == userId) == false)
                 return BadRequest("User not found!");
 
             return _db.CompletedAchievements.Where(ca => ca.UserRefId == userId).Select(ca => new CompletedAchievementState(ca.AchieveRefId)).ToList();
         }
 
         [HttpGet("{userId}")]
-        public ActionResult<List<CompletedAchievementState>> GetForCurrentUser([FromRoute] int userId)
+        public ActionResult<List<CompletedAchievementState>> GetByUserId([FromRoute] int userId)
         {
-            if (_db.Users.Count(x => x.Id == userId) == 0)
+            if (_db.Users.Any(x => x.Id == userId) == false)
                 return BadRequest("User not found!");
 
             return _db.CompletedAchievements.Where(ca => ca.UserRefId == userId).Select(ca => new CompletedAchievementState(ca.AchieveRefId)).ToList();
