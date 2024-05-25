@@ -29,12 +29,14 @@ namespace Promo.Server.Controllers
             [Required, StringLength(100, MinimumLength = 2)] string FirstName,
             [Required, StringLength(100, MinimumLength = 5)] string LastName,
             [Required, Range(1, double.PositiveInfinity)] int ClubId,
-            [Required, MinLength(6)] string Password,
+            [Required, MinLength(6), MaxLength(100)] string Password,
             [Required] string AvatarURL,
             [Required] ProofCodeModel EmailAndProof
         );
 
         public record ProofCodeModel([Required, EmailAddress] string EmailAddress, [Required, Range(1000, 9999)] int ProofCode);
+
+        public record ChangePasswordModel([Required] ProofCodeModel EmailAndProof, [Required, MinLength(6), MaxLength(100)] string Password);
 
         [HttpPost("login")]
         public ActionResult Login([FromBody] LoginModel model)
@@ -113,11 +115,6 @@ namespace Promo.Server.Controllers
         [HttpPost("SendProofCode")]
         public async Task<ActionResult> SendProofCode([FromBody] string emailAddress)
         {
-            if (_db.Users.Any(u => u.Email == emailAddress))
-                return Conflict("email");
-
-            Console.WriteLine(emailAddress);
-
             using var emailMessage = new MimeMessage();
 
             emailMessage.From.Add(new MailboxAddress("no-reply", "no-reply@sskef.site"));
@@ -155,7 +152,28 @@ namespace Promo.Server.Controllers
             if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode))
                 return Ok();
             else
+                return Unauthorized();
+        }
+
+        [HttpPatch("ChangePassword")]
+        public ActionResult ChangePassword(ChangePasswordModel model)
+        {
+            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode) == false)
+                return Unauthorized();
+
+            var passwordHash = _hasher.HashPassword(model.Password).ToString();
+
+            var user = _db.Users.FirstOrDefault(u => u.Email == model.EmailAndProof.EmailAddress);
+
+            if (user == null)
                 return BadRequest();
+
+            user.Password = passwordHash;
+            _db.Update(user);
+            if (_db.SaveChanges() != 1)
+                return BadRequest();
+            else
+                return Ok();
         }
 
         [HttpGet("refresh")]
