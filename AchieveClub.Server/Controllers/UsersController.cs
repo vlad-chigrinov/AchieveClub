@@ -3,6 +3,7 @@ using AchieveClub.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -28,7 +29,7 @@ namespace AchieveClub.Server.Controllers
             }
             else
             {
-                return result.ToUserState(_userStatistics.GetXpSumById(result.Id));
+                return result.ToUserState(_userStatistics.GetXpSumById(result.Id), CultureInfo.CurrentCulture.Name);
             }
         }
 
@@ -42,7 +43,7 @@ namespace AchieveClub.Server.Controllers
             }
             else
             {
-                return result.ToUserState(_userStatistics.GetXpSumById(result.Id));
+                return result.ToUserState(_userStatistics.GetXpSumById(result.Id), CultureInfo.CurrentCulture.Name);
             }
         }
 
@@ -52,8 +53,24 @@ namespace AchieveClub.Server.Controllers
             return _db.Users
                 .Include(u => u.Club)
                 .ToList()
-                .Select(u => u.ToUserState(_userStatistics.GetXpSumById(u.Id)))
+                .Select(u => u.ToUserState(_userStatistics.GetXpSumById(u.Id), CultureInfo.CurrentCulture.Name))
                 .ToList();
+        }
+
+        [Authorize(Roles = "Admin, Supervisor")]
+        [HttpDelete("{userId}")]
+        public ActionResult DeleteUser([FromRoute] int userId)
+        {
+            var user = _db.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+                return BadRequest("UserId is invalid");
+
+            _db.Users.Remove(user);
+            if (_db.SaveChanges() > 0)
+                return Ok();
+            else
+                return BadRequest("Error on delete entity from db");
         }
     }
 }

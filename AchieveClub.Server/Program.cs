@@ -1,9 +1,12 @@
 using AchieveClub.Server.Auth;
 using AchieveClub.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 using System.Text;
 
 namespace AchieveClub.Server
@@ -72,6 +75,20 @@ namespace AchieveClub.Server
                     options.Cookie.IsEssential = true;
                 });
 
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                var supportedCultures = new[]
+                {
+                    new CultureInfo("en"),
+                    new CultureInfo("ru"),
+                    new CultureInfo("pl"),
+                };
+                options.DefaultRequestCulture = new RequestCulture("en");
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
+            });
+            builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
             builder.Services.AddControllers();
 
             builder.Services.AddEndpointsApiExplorer();
@@ -101,6 +118,19 @@ namespace AchieveClub.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseRequestLocalization(options =>
+            {
+                var supportedCultures = new[]
+                {
+                    new CultureInfo("en"),
+                    new CultureInfo("ru"),
+                    new CultureInfo("pl"),
+                };
+                options.DefaultRequestCulture = new RequestCulture("en");
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
+            });
 
             app.MapControllers();
 

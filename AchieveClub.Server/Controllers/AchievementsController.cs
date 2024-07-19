@@ -1,6 +1,8 @@
 ﻿using AchieveClub.Server.Services;
 using AchieveClubServer.Data.DTO;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -14,7 +16,7 @@ namespace AchieveClub.Server.Controllers
         [HttpGet]
         public ActionResult<List<AchievementState>> GetAll()
         {
-            return _db.Achievements.ToList().Select(a => a.ToState(_achievementStatistics.GetCompletionRatioById(a.Id))).ToList();
+            return _db.Achievements.ToList().Select(a => a.ToState(_achievementStatistics.GetCompletionRatioById(a.Id), CultureInfo.CurrentCulture.Name)).ToList();
         }
     }
 }

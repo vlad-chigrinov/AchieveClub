@@ -1,24 +1,29 @@
-﻿using AchieveClub.Server;
-using AchieveClub.Server.Auth;
+﻿using AchieveClub.Server.Auth;
 using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using MimeKit;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
-namespace Promo.Server.Controllers
+namespace AchieveClub.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController(
+        IStringLocalizer<AuthController> localizer,
+        ILogger<AuthController> logger,
         JwtTokenCreator jwtCreator,
         ApplicationContext db,
         HashService hasher,
         EmailProofService emailProof
         ) : ControllerBase
     {
+        private readonly IStringLocalizer<AuthController> _localizer = localizer;
+        private readonly ILogger<AuthController> _logger = logger;
         private readonly JwtTokenCreator _jwtCreator = jwtCreator;
         private readonly ApplicationContext _db = db;
         private readonly HashService _hasher = hasher;
@@ -119,12 +124,14 @@ namespace Promo.Server.Controllers
 
             emailMessage.From.Add(new MailboxAddress("no-reply", "no-reply@sskef.site"));
             emailMessage.To.Add(new MailboxAddress("", emailAddress));
-            emailMessage.Subject = "Подтверждение регистрации";
+            emailMessage.Subject = _localizer["Registration confirmation"];
             int proofCode = _emailProof.GenerateProofCode(emailAddress);
             emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html)
             {
-                Text = $"<h3>Ваш код: <code>{proofCode}</code></h3>"
+                Text = $"<h3>{_localizer["Your code"]}: <code>{proofCode}</code></h3>"
             };
+
+            _logger.LogInformation($"Email culture: {CultureInfo.CurrentUICulture.Name}");
 
             using (var client = new SmtpClient())
             {
