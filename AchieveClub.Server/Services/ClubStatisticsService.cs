@@ -30,6 +30,9 @@ namespace AchieveClub.Server.Services
 
         private int CalculateAvgXp(int id)
         {
+            if (_db.Users.Count(c=>c.ClubRefId == id) == 0)
+                return 0;
+
             double avgXp = _db.Clubs
                 .Where(c=>c.Id == id)
                 .Include(c => c.Users)
