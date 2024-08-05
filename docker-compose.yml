@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  achieveclub.server:
+    image: ${DOCKER_REGISTRY-}achieveclubserver
+    build:
+      context: .
+      dockerfile: AchieveClub.Server/Dockerfile

@@ -104,12 +104,6 @@ namespace AchieveClub.Server
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(
-                    Path.Combine(app.Environment.ContentRootPath, "../StaticFiles")),
-                RequestPath = "/StaticFiles"
-            });
 
             app.UseSwagger();
             app.UseSwaggerUI();
@@ -133,8 +127,6 @@ namespace AchieveClub.Server
             });
 
             app.MapControllers();
-
-            app.MapFallbackToFile("/index.html");
 
             app.Run();
         }

@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  achieveclub.server:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5229
+      - ASPNETCORE_HTTPS_PORTS=7170
+    ports:
+      - "5229"
+      - "7170"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
