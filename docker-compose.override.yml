@@ -9,3 +9,5 @@ services:
     ports:
       - "5229:5229"
       - "7170:7170"
+    volumes:
+      - /root/.dotnet/corefx/cryptography/x509stores/my/*:/root/.dotnet/corefx/cryptography/x509stores/my/
