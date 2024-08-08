@@ -17,10 +17,10 @@ RUN dotnet build "./AchieveClub.Server.csproj" -c $BUILD_CONFIGURATION -o /app/b
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+RUN dotnet dev-certs https
 RUN dotnet publish "./AchieveClub.Server.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
 ENTRYPOINT ["dotnet", "AchieveClub.Server.dll"]
