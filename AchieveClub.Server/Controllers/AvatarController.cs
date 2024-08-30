@@ -33,7 +33,7 @@ namespace AchieveClub.Server.Controllers
             if (fileTypes.Contains(fileInfo.Extension) == false || fileInfo.Extension.IsNullOrEmpty())
                 return BadRequest("File not an image.");
 
-            var filePath = $"StaticFiles/avatars/{Guid.NewGuid()}.jpeg";
+            var filePath = $"avatars/{Guid.NewGuid()}.jpeg";
 
             using (var readStream = file.OpenReadStream())
             {
