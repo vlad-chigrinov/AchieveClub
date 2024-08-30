@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Localization;
+using Microsoft.IdentityModel.Protocols.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.Text;
@@ -17,15 +18,10 @@ namespace AchieveClub.Server
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            if (builder.Environment.IsProduction())
-            {
-                builder.Configuration.AddJsonFile("secrets.json");
-            }
-
             var jwtSettings = new JwtSettings();
             builder.Configuration.Bind("JwtSettings", jwtSettings);
-            jwtSettings.Key = builder.Configuration["jwt-key"] ?? throw new Exception("Add 'jwt-key' to secrets");
-
+            jwtSettings.Key = builder.Configuration["jwt_key"]
+                ?? throw new InvalidConfigurationException("Add 'jwt_key' to config");
 
             builder.Services.AddSingleton(jwtSettings);
             builder.Services.AddTransient<JwtTokenCreator>();
@@ -94,10 +90,8 @@ namespace AchieveClub.Server
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            var dbUsername = builder.Configuration["db-user"];
-            var dbPassword = builder.Configuration["db-password"];
-            connectionString += $" User Id={dbUsername}; Pwd={dbPassword};";
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidConfigurationException("Add 'DefaultConnection' to config");
             builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(connectionString));
 
             var app = builder.Build();
