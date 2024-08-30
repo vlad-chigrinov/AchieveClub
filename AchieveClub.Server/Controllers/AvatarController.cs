@@ -45,7 +45,7 @@ namespace AchieveClub.Server.Controllers
                     Mode = ResizeMode.Crop
                 }));
 
-                using (var fileStream = new FileStream($"../{filePath}", FileMode.CreateNew, FileAccess.Write))
+                using (var fileStream = new FileStream($"./wwwroot/{filePath}", FileMode.CreateNew, FileAccess.Write))
                 {
                     await image.SaveAsJpegAsync(fileStream);
                 }
