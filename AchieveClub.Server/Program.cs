@@ -17,6 +17,7 @@ namespace AchieveClub.Server
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddCors();
 
             var jwtSettings = new JwtSettings();
             builder.Configuration.Bind("JwtSettings", jwtSettings);
@@ -95,6 +96,7 @@ namespace AchieveClub.Server
             builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(connectionString));
 
             var app = builder.Build();
+            app.UseCors(builder => builder.AllowAnyOrigin());
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
