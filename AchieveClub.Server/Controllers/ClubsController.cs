@@ -27,7 +27,7 @@ namespace AchieveClub.Server.Controllers
         [HttpGet("{clubId}")]
         public ActionResult<ClubState> GetById([FromRoute] int clubId)
         {
-            var club = _db.Clubs.Include(c=>c.Users).FirstOrDefault(c => c.Id == clubId);
+            var club = _db.Clubs.Include(c => c.Users).FirstOrDefault(c => c.Id == clubId);
 
             if (club == null)
                 return BadRequest("Club not found!");

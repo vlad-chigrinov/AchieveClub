@@ -1,14 +1,19 @@
 using AchieveClub.Server.Auth;
 using AchieveClub.Server.Services;
+using AchieveClub.Server.SwaggerVersioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Text;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace AchieveClub.Server
 {
@@ -88,8 +93,16 @@ namespace AchieveClub.Server
 
             builder.Services.AddControllers();
 
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddApiVersioning(config =>
+            {
+                config.DefaultApiVersion = new ApiVersion(1, 0);
+                config.AssumeDefaultVersionWhenUnspecified = true;
+                config.ReportApiVersions = true;
+            })
+            .AddMvc()
+            .AddApiExplorer();
+            builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
+            builder.Services.AddSwaggerGen(options => options.OperationFilter<SwaggerDefaultValues>());
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidConfigurationException("Add 'DefaultConnection' to config");
@@ -102,7 +115,17 @@ namespace AchieveClub.Server
             app.UseStaticFiles();
 
             app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(
+                options =>
+                {
+                    foreach (var description in app.DescribeApiVersions())
+                    {
+                        options.SwaggerEndpoint(
+                            $"/swagger/{description.GroupName}/swagger.json",
+                            description.GroupName);
+                    }
+                }
+            );
 
             app.UseHttpsRedirection();
 

@@ -20,9 +20,9 @@ namespace AchieveClub.Server.Controllers
         [HttpGet("current")]
         public ActionResult<List<CompletedAchievementState>> GetForCurrentUser()
         {
-            var cookie = Request.Cookies["X-User-Id"];
-            if (cookie == null || int.TryParse(cookie, out int userId) == false)
-                return BadRequest("User not found!");
+            var userName = HttpContext.User.Identity?.Name;
+            if (userName == null || int.TryParse(userName, out int userId) == false)
+                return Unauthorized("User not found!");
 
             if (_db.Users.Any(x => x.Id == userId) == false)
                 return BadRequest("User not found!");
@@ -48,15 +48,15 @@ namespace AchieveClub.Server.Controllers
             if (user == null)
                 return BadRequest("UserId is invalid");
 
-            foreach(var achieveId in model.AchievementIds)
+            foreach (var achieveId in model.AchievementIds)
             {
-                var achievement = _db.CompletedAchievements.FirstOrDefault(ca=>ca.UserRefId == model.UserId && ca.AchieveRefId == achieveId);
+                var achievement = _db.CompletedAchievements.FirstOrDefault(ca => ca.UserRefId == model.UserId && ca.AchieveRefId == achieveId);
 
-                if(achievement == null)
+                if (achievement == null)
                     return BadRequest("One of AchieveIds is invalid or not completed!");
 
                 _db.CompletedAchievements.Remove(achievement);
-            }   
+            }
 
             var supervisorId = int.Parse(HttpContext.User.Identities.First().Name);
 
@@ -64,7 +64,7 @@ namespace AchieveClub.Server.Controllers
 
             _userStatistics.UpdateXpSumById(model.UserId);
             _clubStatistics.UpdateAvgXpById(user.ClubRefId);
-            foreach( var achievementId in model.AchievementIds)
+            foreach (var achievementId in model.AchievementIds)
                 _achievementStatistics.UpdateCompletedRatioById(achievementId);
 
             return Ok();
@@ -80,29 +80,29 @@ namespace AchieveClub.Server.Controllers
                 return BadRequest("UserId is invalid");
 
             var achievements = new List<AchievementDbo>();
-            foreach(var achieveId in model.AchievementIds)
+            foreach (var achieveId in model.AchievementIds)
             {
                 var achievement = _db.Achievements.FirstOrDefault(u => u.Id == achieveId);
 
-                if(achievement == null)
+                if (achievement == null)
                     return BadRequest("One of AchieveIds is invalid!");
 
                 if (_db.CompletedAchievements.Count(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id) != 0)
                     return BadRequest("Multiple achievements not supported");
 
                 achievements.Add(achievement);
-            }   
+            }
 
             var supervisorId = int.Parse(HttpContext.User.Identities.First().Name);
 
-            foreach(var achievement in achievements)
+            foreach (var achievement in achievements)
                 _db.CompletedAchievements.Add(new CompletedAchievementDbo { UserRefId = user.Id, AchieveRefId = achievement.Id, DateOfCompletion = DateTime.Now, SupervisorRefId = supervisorId });
 
             _db.SaveChanges();
 
             _userStatistics.UpdateXpSumById(model.UserId);
             _clubStatistics.UpdateAvgXpById(user.ClubRefId);
-            foreach( var achievementId in model.AchievementIds)
+            foreach (var achievementId in model.AchievementIds)
                 _achievementStatistics.UpdateCompletedRatioById(achievementId);
 
             return Ok();

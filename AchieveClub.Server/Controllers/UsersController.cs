@@ -1,9 +1,11 @@
 using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Security.Claims;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -18,14 +20,14 @@ namespace AchieveClub.Server.Controllers
         [HttpGet("current")]
         public ActionResult<UserState> GetCurrent()
         {
-            var cookie = Request.Cookies["X-User-Id"];
-            if (cookie == null || int.TryParse(cookie, out int userId) == false)
-                return BadRequest("User not found!");
+            var userName = HttpContext.User.Identity?.Name;
+            if (userName == null || int.TryParse(userName, out int userId) == false)
+                return Unauthorized("User not found!");
 
             var result = _db.Users.Include(u => u.Club).FirstOrDefault(u => u.Id == userId);
             if (result == null)
             {
-                return BadRequest("User not found!");
+                return Unauthorized("User not found!");
             }
             else
             {

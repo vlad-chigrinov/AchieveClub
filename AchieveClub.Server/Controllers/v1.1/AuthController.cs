@@ -1,17 +1,16 @@
 ﻿using AchieveClub.Server.Auth;
 using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
-using MailKit.Net.Smtp;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using MimeKit;
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
 
-namespace AchieveClub.Server.Controllers
+namespace AchieveClub.Server.Controllers.v1_1
 {
     [Route("api/[controller]")]
+    [ApiVersion("1.1")]
     [ApiController]
     public class AuthController(
         IStringLocalizer<AuthController> localizer,
@@ -29,6 +28,7 @@ namespace AchieveClub.Server.Controllers
         private readonly HashService _hasher = hasher;
         private readonly EmailProofService _emailProof = emailProof;
 
+        public record TokenPair(string AuthToken, string RefreshToken);
         public record LoginModel([Required, EmailAddress] string Email, [Required, StringLength(100, MinimumLength = 6)] string Password);
         public record RegistrationModel(
             [Required, StringLength(100, MinimumLength = 2)] string FirstName,
@@ -44,7 +44,7 @@ namespace AchieveClub.Server.Controllers
         public record ChangePasswordModel([Required] ProofCodeModel EmailAndProof, [Required, MinLength(6), MaxLength(100)] string Password);
 
         [HttpPost("login")]
-        public ActionResult Login([FromBody] LoginModel model)
+        public ActionResult<TokenPair> Login([FromBody] LoginModel model)
         {
             var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Email == model.Email);
 
@@ -59,10 +59,8 @@ namespace AchieveClub.Server.Controllers
                     return Unauthorized();
 
                 var token = GenerateJwtByUser(user);
-                SetTokerCookiesPair(token, user.RefreshToken, Response);
-                SetUserIdCookie(user.Id, Response);
 
-                return Ok();
+                return Ok(new TokenPair(token, user.RefreshToken));
             }
             else return BadRequest();
         }
@@ -111,51 +109,43 @@ namespace AchieveClub.Server.Controllers
             _db.Users.Include(u => u.Role);
 
             var token = GenerateJwtByUser(newUser);
-            SetTokerCookiesPair(token, newUser.RefreshToken, Response);
-            SetUserIdCookie(newUser.Id, Response);
 
-            return Ok();
+            return Ok(new TokenPair(token, newUser.RefreshToken));
+        }
+
+        [HttpGet("refresh")]
+        public ActionResult<TokenPair> Refresh(int userId, string refreshToken)
+        {
+            var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+                return Unauthorized();
+
+            if (user.RefreshToken == null || user.RefreshToken != refreshToken)
+                return Unauthorized();
+
+            user.RefreshToken = GenerateRefreshToken();
+
+            _db.Users.Update(user);
+            if (_db.SaveChanges() != 1)
+                return Unauthorized();
+
+            var token = GenerateJwtByUser(user);
+
+            return Ok(new TokenPair(token, user.RefreshToken));
         }
 
         [HttpPost("SendProofCode")]
-        public async Task<ActionResult> SendProofCode([FromBody] string emailAddress)
+        public ActionResult<int> SendProofCode([FromBody] string emailAddress)
         {
-            using var emailMessage = new MimeMessage();
-
-            emailMessage.From.Add(new MailboxAddress("no-reply", "no-reply@sskef.site"));
-            emailMessage.To.Add(new MailboxAddress("", emailAddress));
-            emailMessage.Subject = _localizer["Registration confirmation"];
             int proofCode = _emailProof.GenerateProofCode(emailAddress);
-            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html)
-            {
-                Text = $"<h3>{_localizer["Your code"]}: <code>{proofCode}</code></h3>"
-            };
-
-            _logger.LogInformation($"Email culture: {CultureInfo.CurrentUICulture.Name}");
-
-            using (var client = new SmtpClient())
-            {
-                await client.ConnectAsync("mailbe06.hoster.by.", 465, true);
-                await client.AuthenticateAsync("no-reply@sskef.site", "W3+)lSFhs3");
-                try
-                {
-                    await client.SendAsync(emailMessage);
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(ex);
-                }
-
-                await client.DisconnectAsync(true);
-            }
-
-            return Ok();
+            
+            return Ok(proofCode);
         }
 
         [HttpPost("ValidateProofCode")]
         public ActionResult ValidateProofCode([FromBody] ProofCodeModel model)
         {
-
             if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode))
                 return Ok();
             else
@@ -183,39 +173,6 @@ namespace AchieveClub.Server.Controllers
                 return Ok();
         }
 
-        [HttpGet("refresh")]
-        public ActionResult Refresh()
-        {
-            var refreshToker = Request.Cookies["X-Refresh-Token"];
-            var userIdString = Request.Cookies["X-User-Id"];
-
-            if (refreshToker == null || userIdString == null)
-                return Unauthorized();
-
-            if (int.TryParse(userIdString, out var userId) == false)
-                return Unauthorized();
-
-            var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Id == userId);
-
-            if (user == null)
-                return Unauthorized();
-
-            if (user.RefreshToken == null || user.RefreshToken != refreshToker)
-                return Unauthorized();
-
-            user.RefreshToken = GenerateRefreshToken();
-
-            _db.Users.Update(user);
-            if (_db.SaveChanges() != 1)
-                return Unauthorized();
-
-            var token = GenerateJwtByUser(user);
-            SetTokerCookiesPair(token, user.RefreshToken, Response);
-            SetUserIdCookie(user.Id, Response);
-
-            return Ok();
-        }
-
         private string GenerateJwtByUser(UserDbo user)
         {
             return _jwtCreator.Generate(user.Id, user.Role.Title);
@@ -224,19 +181,6 @@ namespace AchieveClub.Server.Controllers
         private string GenerateRefreshToken()
         {
             return Guid.NewGuid().ToString();
-        }
-
-        private void SetTokerCookiesPair(string jwtToken, string refreshToken, HttpResponse response)
-        {
-            var secureCookieOption = new CookieOptions() { HttpOnly = true, SameSite = SameSiteMode.Strict };
-            Response.Cookies.Append("X-Access-Token", jwtToken, secureCookieOption);
-            Response.Cookies.Append("X-Refresh-Token", refreshToken, secureCookieOption);
-        }
-
-        private void SetUserIdCookie(int userId, HttpResponse response)
-        {
-            var secureCookieOption = new CookieOptions() { HttpOnly = true, SameSite = SameSiteMode.Strict };
-            response.Cookies.Append("X-User-Id", userId.ToString(), secureCookieOption);
         }
     }
 }
