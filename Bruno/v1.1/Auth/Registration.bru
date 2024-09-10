@@ -1,0 +1,29 @@
+meta {
+  name: Registration
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/auth/registration?api-version=1.1
+  body: json
+  auth: none
+}
+
+query {
+  api-version: 1.1
+}
+
+body:json {
+  {
+    "firstName": "Тестим",
+    "lastName": "Регистрацию",
+    "clubId": 1,
+    "password": "qwerty",
+    "avatarURL": "StaticFiles/doge.gif",
+    "emailAndProof": {
+      "emailAddress": "test@mail.com",
+      "proofCode": "5763"
+    }
+  }
+}

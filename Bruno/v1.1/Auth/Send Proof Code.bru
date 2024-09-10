@@ -1,0 +1,19 @@
+meta {
+  name: Send Proof Code
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/auth/SendProofCode
+  body: json
+  auth: none
+}
+
+headers {
+  Accept-Language: en
+}
+
+body:json {
+  "test@mail.com"
+}
