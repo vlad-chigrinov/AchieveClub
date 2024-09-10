@@ -28,8 +28,15 @@ namespace AchieveClub.Server.Controllers.v1_1
         private readonly HashService _hasher = hasher;
         private readonly EmailProofService _emailProof = emailProof;
 
-        public record TokenPair(string AuthToken, string RefreshToken);
-        public record LoginModel([Required, EmailAddress] string Email, [Required, StringLength(100, MinimumLength = 6)] string Password);
+        public record TokenPair(int UserId, string AuthToken, string RefreshToken);
+        public record LoginModel(
+            [Required, EmailAddress] string Email,
+            [Required, StringLength(100, MinimumLength = 6)] string Password
+        );
+        public record RefreshModel(
+            [Required, Range(1, double.MaxValue)] int UserId,
+            [Required, MinLength(30), MaxLength(100)] string RefreshToken
+        );
         public record RegistrationModel(
             [Required, StringLength(100, MinimumLength = 2)] string FirstName,
             [Required, StringLength(100, MinimumLength = 5)] string LastName,
@@ -60,7 +67,7 @@ namespace AchieveClub.Server.Controllers.v1_1
 
                 var token = GenerateJwtByUser(user);
 
-                return Ok(new TokenPair(token, user.RefreshToken));
+                return Ok(new TokenPair(user.Id, token, user.RefreshToken));
             }
             else return BadRequest();
         }
@@ -77,7 +84,7 @@ namespace AchieveClub.Server.Controllers.v1_1
                 return Conflict("email");
 
             //Proof Code
-            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode))
+            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode) == false)
                 return Unauthorized();
 
             //Uniq Name
@@ -110,18 +117,18 @@ namespace AchieveClub.Server.Controllers.v1_1
 
             var token = GenerateJwtByUser(newUser);
 
-            return Ok(new TokenPair(token, newUser.RefreshToken));
+            return Ok(new TokenPair(newUser.Id, token, newUser.RefreshToken));
         }
 
-        [HttpGet("refresh")]
-        public ActionResult<TokenPair> Refresh(int userId, string refreshToken)
+        [HttpPost("refresh")]
+        public ActionResult<TokenPair> Refresh([FromBody] RefreshModel refreshModel)
         {
-            var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Id == userId);
+            var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Id == refreshModel.UserId);
 
             if (user == null)
                 return Unauthorized();
 
-            if (user.RefreshToken == null || user.RefreshToken != refreshToken)
+            if (user.RefreshToken == null || user.RefreshToken != refreshModel.RefreshToken)
                 return Unauthorized();
 
             user.RefreshToken = GenerateRefreshToken();
@@ -132,24 +139,7 @@ namespace AchieveClub.Server.Controllers.v1_1
 
             var token = GenerateJwtByUser(user);
 
-            return Ok(new TokenPair(token, user.RefreshToken));
-        }
-
-        [HttpPost("SendProofCode")]
-        public ActionResult<int> SendProofCode([FromBody] string emailAddress)
-        {
-            int proofCode = _emailProof.GenerateProofCode(emailAddress);
-            
-            return Ok(proofCode);
-        }
-
-        [HttpPost("ValidateProofCode")]
-        public ActionResult ValidateProofCode([FromBody] ProofCodeModel model)
-        {
-            if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode))
-                return Ok();
-            else
-                return Unauthorized();
+            return Ok(new TokenPair(user.Id, token, user.RefreshToken));
         }
 
         [HttpPatch("ChangePassword")]
