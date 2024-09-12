@@ -1,18 +1,22 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace AchieveClub.Server.Services
 {
-    public class AchievementStatisticsService(IMemoryCache cache, ApplicationContext db)
+    public class AchievementStatisticsService(IDistributedCache cache, ApplicationContext db, ILogger<AchievementStatisticsService> logger)
     {
-        private readonly IMemoryCache _cache = cache;
+        private readonly IDistributedCache _cache = cache;
         private readonly ApplicationContext _db = db;
+        private readonly ILogger<AchievementStatisticsService> _logger = logger;
 
         public int GetCompletionRatioById(int id)
         {
-            if(_cache.TryGetValue<int>($"achievement:{id}", out var ratio))
+            var ratio = _cache.GetString($"achievement:{id}");
+            if (ratio != null)
             {
-                return ratio;
+                _logger.LogInformation($"Get value from cache: achievement:{id}");
+                return int.Parse(ratio);
             }
             else
             {
@@ -22,8 +26,9 @@ namespace AchieveClub.Server.Services
 
         public int UpdateCompletedRatioById(int id)
         {
+            _logger.LogInformation($"Update value on cache: achievement:{id}");
             int calculatedRatio = CalculateCompletionRatio(id);
-            _cache.Set<int>($"achievement:{id}", calculatedRatio);
+            _cache.SetString($"achievement:{id}", calculatedRatio.ToString());
             return calculatedRatio;
         }
 

@@ -1,11 +1,12 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace AchieveClub.Server.Services
 {
-    public class EmailProofService(IMemoryCache cache)
+    public class EmailProofService(IDistributedCache cache)
     {
-        private readonly IMemoryCache _cache = cache;
+        private readonly IDistributedCache _cache = cache;
 
         public int GenerateProofCode(string emailAdress)
         {
@@ -16,15 +17,16 @@ namespace AchieveClub.Server.Services
         }
         private void StoreProofCode(string emailAddress, int proofCode)
         {
-            _cache.Set<int>(emailAddress, proofCode, DateTimeOffset.Now.AddMinutes(30));
+            _cache.SetString(emailAddress, proofCode.ToString(), new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)});
         }
 
         public bool ValidateProofCode(string emailAddress, int userCode)
         {
-            if (_cache.TryGetValue<int>(emailAddress, out int proofCode) == false)
+            var proofCode = _cache.GetString(emailAddress);
+            if (proofCode == null)
                 return false;
 
-            return userCode == proofCode;
+            return userCode == int.Parse(proofCode);
         }
     }
 }

@@ -1,19 +1,21 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace AchieveClub.Server.Services
 {
-    public class ClubStatisticsService(IMemoryCache cache, ApplicationContext db, UserStatisticsService userStatistics)
+    public class ClubStatisticsService(IDistributedCache cache, ApplicationContext db, UserStatisticsService userStatistics)
     {
-        private readonly IMemoryCache _cache = cache;
+        private readonly IDistributedCache _cache = cache;
         private readonly ApplicationContext _db = db;
         private readonly UserStatisticsService _userStatistics = userStatistics;
 
         public int GetAvgXpById(int id)
         {
-            if (_cache.TryGetValue<int>($"club:{id}", out var avgXp))
+            var avgXp = _cache.GetString($"club:{id}");
+            if (avgXp != null)
             {
-                return avgXp;
+                return int.Parse(avgXp);
             }
             else
             {
@@ -24,7 +26,7 @@ namespace AchieveClub.Server.Services
         public int UpdateAvgXpById(int id)
         {
             int calculatedAvgXp = CalculateAvgXp(id);
-            _cache.Set<int>($"club:{id}", calculatedAvgXp);
+            _cache.SetString($"club:{id}", calculatedAvgXp.ToString());
             return calculatedAvgXp;
         }
 

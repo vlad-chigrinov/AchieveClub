@@ -34,7 +34,11 @@ namespace AchieveClub.Server
             builder.Services.AddTransient<HashService>();
             builder.Services.AddTransient<EmailProofService>();
 
-            builder.Services.AddMemoryCache();
+            var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection")
+                ?? throw new InvalidConfigurationException("Add 'RedisConnection' to config");
+            builder.Services.AddStackExchangeRedisCache(options => {
+                options.Configuration = redisConnectionString;
+            });
             builder.Services.AddTransient<AchievementStatisticsService>();
             builder.Services.AddTransient<UserStatisticsService>();
             builder.Services.AddTransient<ClubStatisticsService>();

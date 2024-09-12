@@ -1,18 +1,20 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace AchieveClub.Server.Services
 {
-    public class UserStatisticsService(IMemoryCache cache, ApplicationContext db)
+    public class UserStatisticsService(IDistributedCache cache, ApplicationContext db)
     {
-        private readonly IMemoryCache _cache = cache;
+        private readonly IDistributedCache _cache = cache;
         private readonly ApplicationContext _db = db;
 
         public int GetXpSumById(int id)
         {
-            if (_cache.TryGetValue<int>($"user:{id}", out var xpSum))
+            var xpSum = _cache.GetString($"user:{id}");
+            if (xpSum != null)
             {
-                return xpSum;
+                return int.Parse(xpSum);
             }
             else
             {
@@ -23,7 +25,7 @@ namespace AchieveClub.Server.Services
         public int UpdateXpSumById(int id)
         {
             int calculatedXpSum = CalculateXpSum(id);
-            _cache.Set<int>($"user:{id}", calculatedXpSum);
+            _cache.SetString($"user:{id}", calculatedXpSum.ToString());
             return calculatedXpSum;
         }
 
