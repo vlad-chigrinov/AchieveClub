@@ -1,0 +1,18 @@
+meta {
+  name: Validate Proof Code
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/auth/ValidateProofCode
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "emailAddress": "test@mail.com",
+    "proofCode": 5668
+  }
+}

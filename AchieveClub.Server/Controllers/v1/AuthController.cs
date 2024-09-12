@@ -81,7 +81,7 @@ namespace AchieveClub.Server.Controllers.v1
                 return Conflict("email");
 
             //Proof Code
-            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode))
+            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode) == false)
                 return Unauthorized();
 
             //Uniq Name
