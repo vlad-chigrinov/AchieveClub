@@ -2,11 +2,9 @@
 using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
 using Asp.Versioning;
-using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using MimeKit;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 

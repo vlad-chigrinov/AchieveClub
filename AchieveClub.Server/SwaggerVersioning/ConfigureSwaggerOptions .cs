@@ -24,5 +24,21 @@ namespace AchieveClub.Server.SwaggerVersioning
                     });
             }
         }
+
+        private static OpenApiInfo CreateInfoForApiVersion(ApiVersionDescription description)
+        {
+            var info = new OpenApiInfo()
+            {
+                Title = "Achieve Club Api",
+                Version = description.ApiVersion.ToString(),
+            };
+
+            if (description.IsDeprecated)
+            {
+                info.Description += " This API version has been deprecated.";
+            }
+
+            return info;
+        }
     }
 }

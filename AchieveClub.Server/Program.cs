@@ -13,7 +13,6 @@ using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Text;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace AchieveClub.Server
 {
@@ -23,6 +22,10 @@ namespace AchieveClub.Server
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddCors();
+
+            var emailSettings = new EmailSettings();
+            builder.Configuration.Bind("EmailSettings", emailSettings);
+            builder.Services.AddSingleton(emailSettings);
 
             var jwtSettings = new JwtSettings();
             builder.Configuration.Bind("JwtSettings", jwtSettings);
@@ -104,7 +107,11 @@ namespace AchieveClub.Server
                 config.ReportApiVersions = true;
             })
             .AddMvc()
-            .AddApiExplorer();
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
             builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
             builder.Services.AddSwaggerGen(options => options.OperationFilter<SwaggerDefaultValues>());
 

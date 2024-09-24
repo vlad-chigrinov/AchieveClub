@@ -5,13 +5,17 @@ meta {
 }
 
 post {
-  url: {{base_url}}/auth/SendProofCode
+  url: {{base_url}}/email/send?api-version=1.1
   body: json
   auth: none
 }
 
+query {
+  api-version: 1.1
+}
+
 headers {
-  Accept-Language: en
+  ~Accept-Language: ru
 }
 
 body:json {
