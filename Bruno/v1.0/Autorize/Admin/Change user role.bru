@@ -1,0 +1,18 @@
+meta {
+  name: Change user role
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{base_url}}/users/change_role
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userId": 288,
+    "roleId": 4
+  }
+}

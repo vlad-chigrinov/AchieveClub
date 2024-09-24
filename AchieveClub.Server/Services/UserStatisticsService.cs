@@ -37,5 +37,10 @@ namespace AchieveClub.Server.Services
                 .Select(ca=>ca.Achievement.Xp)
                 .Sum();
         }
+
+        public void DeleteXpSumById(int id)
+        {
+            _cache.Remove($"user:{id}");
+        }
     }
 }
