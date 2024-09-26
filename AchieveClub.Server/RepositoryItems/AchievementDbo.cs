@@ -19,7 +19,6 @@ namespace AchieveClubServer.Data.DTO
         public string Description_ru { get; set; }
         public string Description_pl { get; set; }
         public string LogoURL { get; set; }
-        public bool IsMultiple { get; set; }
 
         public AchievementState ToState(int ratio, string lang)
         {

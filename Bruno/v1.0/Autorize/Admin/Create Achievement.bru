@@ -1,0 +1,24 @@
+meta {
+  name: Create Achievement
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/achievements
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title_en": "New Achievement",
+    "title_ru": "Новон достижение",
+    "title_pl": "Novoe Dostizheniece",
+    "description_en": "New Achievement Very Hard",
+    "description_ru": "Новон достижение очень сложное",
+    "description_pl": "Novoe Dostizheniece Ocheni Slozhloece",
+    "logoURL": "icons/achievements/eva-elfie-2.jpeg",
+    "xp": 999
+  }
+}

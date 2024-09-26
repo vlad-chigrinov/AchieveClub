@@ -1,0 +1,15 @@
+meta {
+  name: Upload Achievement Icon
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/achievementicons
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  file: @file(C:\Users\vladi\Pictures\users\eva-elfie-2.jpg)
+}

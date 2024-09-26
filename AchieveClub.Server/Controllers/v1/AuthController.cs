@@ -5,6 +5,8 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using SendGrid.Helpers.Mail;
+using SendGrid;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
@@ -19,7 +21,8 @@ namespace AchieveClub.Server.Controllers.v1
         JwtTokenCreator jwtCreator,
         ApplicationContext db,
         HashService hasher,
-        EmailProofService emailProof
+        EmailProofService emailProof,
+        EmailSettings emailSettings
         ) : ControllerBase
     {
         private readonly IStringLocalizer<AuthController> _localizer = localizer;
@@ -28,6 +31,7 @@ namespace AchieveClub.Server.Controllers.v1
         private readonly ApplicationContext _db = db;
         private readonly HashService _hasher = hasher;
         private readonly EmailProofService _emailProof = emailProof;
+        private readonly EmailSettings _emailSettings = emailSettings;
 
         public record LoginModel([Required, EmailAddress] string Email, [Required, StringLength(100, MinimumLength = 6)] string Password);
         public record RegistrationModel(
@@ -117,15 +121,27 @@ namespace AchieveClub.Server.Controllers.v1
             return Ok();
         }
 
-        [HttpPost("SendProofCode")]
-        public ActionResult<int> SendProofCode([FromBody] string emailAddress)
+        [HttpPost("sendProofCode")]
+        public async Task<ActionResult> SendProofCode([FromBody] string emailAddress)
         {
             int proofCode = _emailProof.GenerateProofCode(emailAddress);
 
-            return Ok(proofCode);
+            var apiKey = _emailSettings.ApiKey;
+            var client = new SendGridClient(apiKey);
+            var from = new EmailAddress(_emailSettings.Email, _emailSettings.Name);
+            var subject = _localizer["Registration confirmation"];
+            var to = new EmailAddress(emailAddress);
+            var htmlContent = $"<h3>{_localizer["Your code"]}: <code>{proofCode}</code></h3>";
+            var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
+            var response = await client.SendEmailAsync(msg);
+
+            if (response.IsSuccessStatusCode)
+                return Ok();
+            else
+                return BadRequest(response.StatusCode);
         }
 
-        [HttpPost("ValidateProofCode")]
+        [HttpPost("validateProofCode")]
         public ActionResult ValidateProofCode([FromBody] ProofCodeModel model)
         {
 
@@ -135,7 +151,7 @@ namespace AchieveClub.Server.Controllers.v1
                 return Unauthorized();
         }
 
-        [HttpPatch("ChangePassword")]
+        [HttpPatch("changePassword")]
         public ActionResult ChangePassword(ChangePasswordModel model)
         {
             if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode) == false)
