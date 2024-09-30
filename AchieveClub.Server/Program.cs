@@ -117,7 +117,7 @@ namespace AchieveClub.Server
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidConfigurationException("Add 'DefaultConnection' to config");
-            builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(connectionString));
+            builder.Services.AddDbContext<ApplicationContext>(options => options.UseNpgsql(connectionString));
 
             var app = builder.Build();
             app.UseCors(builder => builder.AllowAnyOrigin());
