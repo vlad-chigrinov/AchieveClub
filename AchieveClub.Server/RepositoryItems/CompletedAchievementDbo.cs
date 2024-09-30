@@ -22,5 +22,5 @@ namespace AchieveClub.Server.RepositoryItems
         [ForeignKey(nameof(AchieveRefId))]
         public AchievementDbo Achievement { get; set; }
     }
-    public record CompletedAchievementState(int AchieveId);
+    public record CompletedAchievementState(int AchieveId, int CompletionCount);
 }

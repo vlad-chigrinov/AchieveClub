@@ -3,18 +3,26 @@ using AchieveClub.Server.Services;
 using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.ComponentModel.DataAnnotations;
 
 namespace AchieveClub.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CompletedAchievementsController(ApplicationContext db, AchievementStatisticsService achievementStatistics, UserStatisticsService userStatistics, ClubStatisticsService clubStatistics) : ControllerBase
+    public class CompletedAchievementsController(
+        ApplicationContext db,
+        AchievementStatisticsService achievementStatistics,
+        UserStatisticsService userStatistics,
+        ClubStatisticsService clubStatistics,
+        CompletedAchievementsCache completedCache
+        ) : ControllerBase
     {
         private readonly ApplicationContext _db = db;
         private readonly AchievementStatisticsService _achievementStatistics = achievementStatistics;
         private readonly UserStatisticsService _userStatistics = userStatistics;
         private readonly ClubStatisticsService _clubStatistics = clubStatistics;
+        private readonly CompletedAchievementsCache _completedCache = completedCache;
 
         [Authorize]
         [HttpGet("current")]
@@ -27,7 +35,7 @@ namespace AchieveClub.Server.Controllers
             if (_db.Users.Any(x => x.Id == userId) == false)
                 return BadRequest("User not found!");
 
-            return _db.CompletedAchievements.Where(ca => ca.UserRefId == userId).Select(ca => new CompletedAchievementState(ca.AchieveRefId)).ToList();
+            return _completedCache.GetByUserId(userId);
         }
 
         [HttpGet("{userId}")]
@@ -36,12 +44,12 @@ namespace AchieveClub.Server.Controllers
             if (_db.Users.Any(x => x.Id == userId) == false)
                 return BadRequest("User not found!");
 
-            return _db.CompletedAchievements.Where(ca => ca.UserRefId == userId).Select(ca => new CompletedAchievementState(ca.AchieveRefId)).ToList();
+            return _completedCache.GetByUserId(userId);
         }
 
         [Authorize(Roles = "Supervisor, Admin")]
         [HttpDelete]
-        public ActionResult CalcelCompleteAchievements(CompleteAchievementModel model)
+        public ActionResult CancelCompleteAchievements(CompleteAchievementModel model)
         {
             var user = _db.Users.FirstOrDefault(u => u.Id == model.UserId);
 
@@ -58,14 +66,13 @@ namespace AchieveClub.Server.Controllers
                 _db.CompletedAchievements.Remove(achievement);
             }
 
-            var supervisorId = int.Parse(HttpContext.User.Identities.First().Name);
-
             _db.SaveChanges();
 
             _userStatistics.UpdateXpSumById(model.UserId);
             _clubStatistics.UpdateAvgXpById(user.ClubRefId);
             foreach (var achievementId in model.AchievementIds)
                 _achievementStatistics.UpdateCompletedRatioById(achievementId);
+            _completedCache.UpdateByUserId(model.UserId);
 
             return Ok();
         }
@@ -87,8 +94,9 @@ namespace AchieveClub.Server.Controllers
                 if (achievement == null)
                     return BadRequest("One of AchieveIds is invalid!");
 
-                if (_db.CompletedAchievements.Count(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id) != 0)
-                    return BadRequest("Multiple achievements not supported");
+                if (achievement.IsMultiple == false)
+                    if (_db.CompletedAchievements.Any(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id))
+                        return BadRequest("Multiple achievements not supported");
 
                 achievements.Add(achievement);
             }
@@ -96,7 +104,13 @@ namespace AchieveClub.Server.Controllers
             var supervisorId = int.Parse(HttpContext.User.Identities.First().Name);
 
             foreach (var achievement in achievements)
-                _db.CompletedAchievements.Add(new CompletedAchievementDbo { UserRefId = user.Id, AchieveRefId = achievement.Id, DateOfCompletion = DateTime.Now, SupervisorRefId = supervisorId });
+                _db.CompletedAchievements.Add(new CompletedAchievementDbo
+                {
+                    UserRefId = user.Id,
+                    AchieveRefId = achievement.Id,
+                    DateOfCompletion = DateTime.Now,
+                    SupervisorRefId = supervisorId
+                });
 
             _db.SaveChanges();
 
@@ -104,6 +118,7 @@ namespace AchieveClub.Server.Controllers
             _clubStatistics.UpdateAvgXpById(user.ClubRefId);
             foreach (var achievementId in model.AchievementIds)
                 _achievementStatistics.UpdateCompletedRatioById(achievementId);
+            _completedCache.UpdateByUserId(model.UserId);
 
             return Ok();
         }

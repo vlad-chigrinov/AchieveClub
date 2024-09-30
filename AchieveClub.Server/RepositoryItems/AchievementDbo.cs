@@ -19,17 +19,18 @@ namespace AchieveClubServer.Data.DTO
         public string Description_ru { get; set; }
         public string Description_pl { get; set; }
         public string LogoURL { get; set; }
+        public bool IsMultiple {  get; set; }
 
         public AchievementState ToState(int ratio, string lang)
         {
             switch (lang)
             {
                 case "en":
-                    return new AchievementState(Id, Xp,Title_en, Description_en, LogoURL, ratio);
+                    return new AchievementState(Id, Xp,Title_en, Description_en, LogoURL, ratio, IsMultiple);
                 case "ru":
-                    return new AchievementState(Id, Xp, Title_ru, Description_ru, LogoURL, ratio);
+                    return new AchievementState(Id, Xp, Title_ru, Description_ru, LogoURL, ratio, IsMultiple);
                 case "pl":
-                    return new AchievementState(Id, Xp, Title_pl, Description_pl, LogoURL, ratio);
+                    return new AchievementState(Id, Xp, Title_pl, Description_pl, LogoURL, ratio, IsMultiple);
                 default:
                     throw new NotImplementedException("Lang not supported!");
             }
@@ -41,6 +42,7 @@ namespace AchieveClubServer.Data.DTO
         string Title,
         string Description,
         string LogoURL,
-        int CompletionRatio
+        int CompletionRatio,
+        bool IsMultiple
         );
 }

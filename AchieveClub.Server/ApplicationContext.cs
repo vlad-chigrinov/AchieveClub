@@ -4,8 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AchieveClub.Server;
 
-public class ApplicationContext(DbContextOptions options) : DbContext(options)
+public class ApplicationContext : DbContext
 {
+    public ApplicationContext(DbContextOptions options) : base(options)
+    {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    }
+
     public DbSet<UserDbo> Users { get; set; } = null!;
     public DbSet<ClubDbo> Clubs { get; set; } = null!;
     public DbSet<SupervisorDbo> Supervisors { get; set; } = null!;

@@ -23,7 +23,8 @@ namespace AchieveClub.Server.Controllers
             [Required, StringLength(300, MinimumLength = 5)] string Description_ru,
             [Required, StringLength(300, MinimumLength = 5)] string Description_pl,
             [Required] string LogoURL,
-            [Required, Range(0, double.MaxValue)] int Xp
+            [Required, Range(0, double.MaxValue)] int Xp,
+            [Required] bool IsMultiple
         );
 
         [HttpGet]
@@ -48,7 +49,8 @@ namespace AchieveClub.Server.Controllers
                 Description_ru = model.Description_ru,
                 Description_pl = model.Description_pl,
                 LogoURL = model.LogoURL,
-                Xp = model.Xp
+                Xp = model.Xp,
+                IsMultiple = model.IsMultiple
             };
 
             _db.Achievements.Add(newAchievement);

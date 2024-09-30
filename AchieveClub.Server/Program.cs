@@ -45,6 +45,7 @@ namespace AchieveClub.Server
             builder.Services.AddTransient<AchievementStatisticsService>();
             builder.Services.AddTransient<UserStatisticsService>();
             builder.Services.AddTransient<ClubStatisticsService>();
+            builder.Services.AddTransient<CompletedAchievementsCache>();
 
             builder.Services.AddAuthentication(i =>
             {
