@@ -1,0 +1,23 @@
+meta {
+  name: Registration
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/auth/registration
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "firstName": "Тестируем",
+    "lastName": "Регистрацию",
+    "clubId": 1,
+    "password": "qwerty12",
+    "avatarURL": "StaticFiles/doge.gif",
+    "emailAddress": "test@email.com",
+    "proofCode": 1111
+  }
+}

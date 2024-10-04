@@ -1,0 +1,19 @@
+meta {
+  name: Send Proof Email Code
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{base_url}}/email/proof_email
+  body: json
+  auth: none
+}
+
+headers {
+  Accept-Language: ru
+}
+
+body:json {
+  "test@email.com"
+}

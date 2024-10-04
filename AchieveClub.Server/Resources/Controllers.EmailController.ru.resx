@@ -123,4 +123,7 @@
   <data name="Your code" xml:space="preserve">
     <value>Ваш код</value>
   </data>
+  <data name="Confirm password change" xml:space="preserve">
+    <value>Подтвердите смену пароля</value>
+  </data>
 </root>

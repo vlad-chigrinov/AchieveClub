@@ -5,9 +5,13 @@ meta {
 }
 
 post {
-  url: {{base_url}}/auth/registration
+  url: {{base_url}}/auth/registration?api-version=1.1
   body: json
   auth: none
+}
+
+query {
+  api-version: 1.1
 }
 
 body:json {
@@ -17,9 +21,7 @@ body:json {
     "clubId": 1,
     "password": "qwerty",
     "avatarURL": "StaticFiles/doge.gif",
-    "emailAndProof": {
-      "emailAddress": "test@mail.com",
-      "proofCode": "1111"
-    }
+    "emailAddress": "test@mail.com",
+    "proofCode": 1111
   }
 }

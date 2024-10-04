@@ -118,9 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Registration confirmation" xml:space="preserve">
-    <value>Подтверждение регистрации</value>
+    <value>Potwierdzenie rejestracji</value>
   </data>
   <data name="Your code" xml:space="preserve">
-    <value>Ваш код</value>
+    <value>Twój kod</value>
+  </data>
+  <data name="Confirm password change" xml:space="preserve">
+    <value>Potwierdź zmianę hasła</value>
   </data>
 </root>

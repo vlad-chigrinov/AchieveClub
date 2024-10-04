@@ -28,5 +28,10 @@ namespace AchieveClub.Server.Services
 
             return userCode == int.Parse(proofCode);
         }
+
+        public void DeleteProofCode(string emailAddress)
+        {
+            _cache.Remove(emailAddress);
+        }
     }
 }

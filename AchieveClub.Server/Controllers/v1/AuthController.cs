@@ -9,6 +9,7 @@ using SendGrid.Helpers.Mail;
 using SendGrid;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using AchieveClub.Server.Contract.Request;
 
 namespace AchieveClub.Server.Controllers.v1
 {
@@ -33,22 +34,8 @@ namespace AchieveClub.Server.Controllers.v1
         private readonly EmailProofService _emailProof = emailProof;
         private readonly EmailSettings _emailSettings = emailSettings;
 
-        public record LoginModel([Required, EmailAddress] string Email, [Required, StringLength(100, MinimumLength = 6)] string Password);
-        public record RegistrationModel(
-            [Required, StringLength(100, MinimumLength = 2)] string FirstName,
-            [Required, StringLength(100, MinimumLength = 5)] string LastName,
-            [Required, Range(1, double.PositiveInfinity)] int ClubId,
-            [Required, MinLength(6), MaxLength(100)] string Password,
-            [Required] string AvatarURL,
-            [Required] ProofCodeModel EmailAndProof
-        );
-
-        public record ProofCodeModel([Required, EmailAddress] string EmailAddress, [Required, Range(1000, 9999)] int ProofCode);
-
-        public record ChangePasswordModel([Required] ProofCodeModel EmailAndProof, [Required, MinLength(6), MaxLength(100)] string Password);
-
         [HttpPost("login")]
-        public ActionResult Login([FromBody] LoginModel model)
+        public ActionResult Login([FromBody] LoginRequest model)
         {
             var user = _db.Users.Include(u => u.Role).FirstOrDefault(u => u.Email == model.Email);
 
@@ -72,18 +59,18 @@ namespace AchieveClub.Server.Controllers.v1
         }
 
         [HttpPost("registration")]
-        public ActionResult Registration([FromBody] RegistrationModel model)
+        public ActionResult Registration([FromBody] RegistrationRequest model)
         {
             //Validate Club
             if (_db.Clubs.Any(c => c.Id == model.ClubId) == false)
                 return Conflict("clubId");
 
             //Uniq Email
-            if (_db.Users.Any(u => u.Email == model.EmailAndProof.EmailAddress))
+            if (_db.Users.Any(u => u.Email == model.EmailAddress))
                 return Conflict("email");
 
             //Proof Code
-            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode) == false)
+            if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode) == false)
                 return Unauthorized();
 
             //Uniq Name
@@ -99,7 +86,7 @@ namespace AchieveClub.Server.Controllers.v1
                 FirstName = model.FirstName,
                 LastName = model.LastName,
                 Avatar = model.AvatarURL,
-                Email = model.EmailAndProof.EmailAddress,
+                Email = model.EmailAddress,
                 ClubRefId = model.ClubId,
                 Password = passwordHash,
                 RefreshToken = GenerateRefreshToken(),
@@ -118,48 +105,19 @@ namespace AchieveClub.Server.Controllers.v1
             SetTokerCookiesPair(token, newUser.RefreshToken, Response);
             SetUserIdCookie(newUser.Id, Response);
 
+            _emailProof.DeleteProofCode(model.EmailAddress);
             return Ok();
         }
 
-        [HttpPost("sendProofCode")]
-        public async Task<ActionResult> SendProofCode([FromBody] string emailAddress)
+        [HttpPatch("change_password")]
+        public ActionResult ChangePassword(ChangePasswordRequest model)
         {
-            int proofCode = _emailProof.GenerateProofCode(emailAddress);
-
-            var apiKey = _emailSettings.ApiKey;
-            var client = new SendGridClient(apiKey);
-            var from = new EmailAddress(_emailSettings.Email, _emailSettings.Name);
-            var subject = _localizer["Registration confirmation"];
-            var to = new EmailAddress(emailAddress);
-            var htmlContent = $"<h3>{_localizer["Your code"]}: <code>{proofCode}</code></h3>";
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
-            var response = await client.SendEmailAsync(msg);
-
-            if (response.IsSuccessStatusCode)
-                return Ok();
-            else
-                return BadRequest(response.StatusCode);
-        }
-
-        [HttpPost("validateProofCode")]
-        public ActionResult ValidateProofCode([FromBody] ProofCodeModel model)
-        {
-
-            if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode))
-                return Ok();
-            else
-                return Unauthorized();
-        }
-
-        [HttpPatch("changePassword")]
-        public ActionResult ChangePassword(ChangePasswordModel model)
-        {
-            if (_emailProof.ValidateProofCode(model.EmailAndProof.EmailAddress, model.EmailAndProof.ProofCode) == false)
+            if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode) == false)
                 return Unauthorized();
 
             var passwordHash = _hasher.HashPassword(model.Password).ToString();
 
-            var user = _db.Users.FirstOrDefault(u => u.Email == model.EmailAndProof.EmailAddress);
+            var user = _db.Users.FirstOrDefault(u => u.Email == model.EmailAddress);
 
             if (user == null)
                 return BadRequest();
@@ -167,9 +125,14 @@ namespace AchieveClub.Server.Controllers.v1
             user.Password = passwordHash;
             _db.Update(user);
             if (_db.SaveChanges() != 1)
+            {
                 return BadRequest();
+            }
             else
+            {
+                _emailProof.DeleteProofCode(model.EmailAddress);
                 return Ok();
+            }
         }
 
         [HttpGet("refresh")]
