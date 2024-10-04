@@ -15,6 +15,12 @@ namespace AchieveClub.Server.Services
             StoreProofCode(emailAdress, proofCode);
             return proofCode;
         }
+
+        public bool Contains(string emailAddress)
+        {
+            return string.IsNullOrEmpty(_cache.GetString(emailAddress)) == false;
+        }
+
         private void StoreProofCode(string emailAddress, int proofCode)
         {
             _cache.SetString(emailAddress, proofCode.ToString(), new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)});

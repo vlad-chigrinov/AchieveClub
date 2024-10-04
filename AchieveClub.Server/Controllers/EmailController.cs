@@ -27,6 +27,8 @@ namespace AchieveClub.Server.Controllers
         [HttpPost("change_password")]
         public async Task<ActionResult> SendChangePasswordCode([FromBody] string emailAddress)
         {
+            if (_emailProof.Contains(emailAddress))
+                return Forbid("timeout");
 
             if (_db.Users.Any(u => u.Email == emailAddress) == false)
                 return Forbid("email");
@@ -51,6 +53,9 @@ namespace AchieveClub.Server.Controllers
         [HttpPost("proof_email")]
         public async Task<ActionResult> SendEmailProofCode([FromBody] string emailAddress)
         {
+            if (_emailProof.Contains(emailAddress))
+                return Forbid("timeout");
+
             if (_db.Users.Any(u => u.Email == emailAddress))
                 return Conflict("email");
 
