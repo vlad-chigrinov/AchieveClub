@@ -6,13 +6,12 @@ meta {
 
 post {
   url: {{base_url}}/auth/ValidateProofCode
+  url: {{base_url}}/email/validate_code
   body: json
   auth: none
 }
 
 body:json {
   {
-    "emailAddress": "test@email.com",
-    "proofCode": 1111
   }
 }
