@@ -21,6 +21,7 @@ namespace AchieveClub.Server
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
             builder.Services.AddCors();
 
             var emailSettings = new EmailSettings();
@@ -39,7 +40,8 @@ namespace AchieveClub.Server
 
             var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection")
                 ?? throw new InvalidConfigurationException("Add 'RedisConnection' to config");
-            builder.Services.AddStackExchangeRedisCache(options => {
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
                 options.Configuration = redisConnectionString;
             });
             builder.Services.AddTransient<AchievementStatisticsService>();
@@ -121,28 +123,14 @@ namespace AchieveClub.Server
             builder.Services.AddDbContext<ApplicationContext>(options => options.UseNpgsql(connectionString));
 
             var app = builder.Build();
-            app.UseCors(builder => builder.AllowAnyOrigin());
 
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-
-            app.UseSwagger();
-            app.UseSwaggerUI(
-                options =>
-                {
-                    foreach (var description in app.DescribeApiVersions())
-                    {
-                        options.SwaggerEndpoint(
-                            $"/swagger/{description.GroupName}/swagger.json",
-                            description.GroupName);
-                    }
-                }
-            );
+            if (app.Environment.IsProduction())
+                app.UseHsts();
 
             app.UseHttpsRedirection();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.UseRequestLocalization(options =>
             {
@@ -157,7 +145,30 @@ namespace AchieveClub.Server
                 options.SupportedUICultures = supportedCultures;
             });
 
+            app.UseCors(builder => builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .WithExposedHeaders("*")
+            );
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             app.MapControllers();
+
+            app.UseSwagger();
+            app.UseSwaggerUI(
+                options =>
+                {
+                    foreach (var description in app.DescribeApiVersions())
+                    {
+                        options.SwaggerEndpoint(
+                            $"/swagger/{description.GroupName}/swagger.json",
+                            description.GroupName);
+                    }
+                }
+            );
 
             app.Run();
         }
