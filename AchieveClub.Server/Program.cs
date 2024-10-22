@@ -5,13 +5,12 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace AchieveClub.Server
@@ -122,12 +121,23 @@ namespace AchieveClub.Server
                 ?? throw new InvalidConfigurationException("Add 'DefaultConnection' to config");
             builder.Services.AddDbContext<ApplicationContext>(options => options.UseNpgsql(connectionString));
 
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ConfigureHttpsDefaults(options =>
+                {
+                    options.ServerCertificate = X509Certificate2.CreateFromPemFile(
+                        builder.Configuration["Certificates:Public"],
+                        builder.Configuration["Certificates:Private"]);
+                });
+            });
+
             var app = builder.Build();
 
             if (app.Environment.IsProduction())
+            {
                 app.UseHsts();
-
-            app.UseHttpsRedirection();
+                app.UseHttpsRedirection();
+            }
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
@@ -157,18 +167,21 @@ namespace AchieveClub.Server
 
             app.MapControllers();
 
-            app.UseSwagger();
-            app.UseSwaggerUI(
-                options =>
-                {
-                    foreach (var description in app.DescribeApiVersions())
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI(
+                    options =>
                     {
-                        options.SwaggerEndpoint(
-                            $"/swagger/{description.GroupName}/swagger.json",
-                            description.GroupName);
+                        foreach (var description in app.DescribeApiVersions())
+                        {
+                            options.SwaggerEndpoint(
+                                $"/swagger/{description.GroupName}/swagger.json",
+                                description.GroupName);
+                        }
                     }
-                }
-            );
+                );
+            }
 
             app.Run();
         }
