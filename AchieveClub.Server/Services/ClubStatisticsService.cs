@@ -4,8 +4,13 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace AchieveClub.Server.Services
 {
-    public class ClubStatisticsService(IDistributedCache cache, ApplicationContext db, UserStatisticsService userStatistics)
+    public class ClubStatisticsService(
+        ILogger<ClubStatisticsService> logger,
+        IDistributedCache cache,
+        ApplicationContext db,
+        UserStatisticsService userStatistics)
     {
+        private readonly ILogger<ClubStatisticsService> _logger = logger;
         private readonly IDistributedCache _cache = cache;
         private readonly ApplicationContext _db = db;
         private readonly UserStatisticsService _userStatistics = userStatistics;
@@ -15,10 +20,12 @@ namespace AchieveClub.Server.Services
             var avgXp = _cache.GetString($"club:{id}");
             if (avgXp != null)
             {
+                _logger.LogDebug($"Get value from cache: club:{id}");
                 return int.Parse(avgXp);
             }
             else
             {
+                _logger.LogDebug($"Update value in cache: club:{id}");
                 return UpdateAvgXpById(id);
             }
         }

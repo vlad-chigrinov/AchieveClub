@@ -20,14 +20,19 @@ namespace AchieveClub.Server.Services
             var completedStatesString = _cache.GetString($"{nameof(CompletedAchievementState)}:{userId}");
             if (completedStatesString == null)
             {
+                _logger.LogDebug($"Update value in cache: {nameof(CompletedAchievementState)}:{userId}");
                 return UpdateByUserId(userId);
             }
             else
             {
                 var completedStates = DeserializeAchievements(completedStatesString);
                 if (completedStates == null)
-                    throw new Exception("Error on deserializing completed achievements from cache!");
-                _logger.LogInformation($"Get {nameof(CompletedAchievementState)}:{userId} from cache");
+                {
+                    var error = $"Error on deserializing {nameof(CompletedAchievementState)}:{userId} from cache!";
+                    _logger.LogError(error);
+                    throw new Exception(error);
+                }
+                _logger.LogDebug($"Get {nameof(CompletedAchievementState)}:{userId} from cache");
                 return completedStates;
             }
         }

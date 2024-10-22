@@ -4,8 +4,9 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace AchieveClub.Server.Services
 {
-    public class UserStatisticsService(IDistributedCache cache, ApplicationContext db)
+    public class UserStatisticsService(ILogger<UserStatisticsService> logger, IDistributedCache cache, ApplicationContext db)
     {
+        private readonly ILogger<UserStatisticsService> _logger = logger;
         private readonly IDistributedCache _cache = cache;
         private readonly ApplicationContext _db = db;
 
@@ -14,10 +15,12 @@ namespace AchieveClub.Server.Services
             var xpSum = _cache.GetString($"user:{id}");
             if (xpSum != null)
             {
+                _logger.LogDebug($"Get user:{id} from cache");
                 return int.Parse(xpSum);
             }
             else
             {
+                _logger.LogDebug($"Update user:{id} in cache");
                 return UpdateXpSumById(id);
             }
         }

@@ -15,18 +15,18 @@ namespace AchieveClub.Server.Services
             var ratio = _cache.GetString($"achievement:{id}");
             if (ratio != null)
             {
-                _logger.LogInformation($"Get value from cache: achievement:{id}");
+                _logger.LogDebug($"Get value from cache: achievement:{id}");
                 return int.Parse(ratio);
             }
             else
             {
+                _logger.LogDebug($"Update value in cache: achievement:{id}");
                 return UpdateCompletedRatioById(id);
             }
         }
 
         public int UpdateCompletedRatioById(int id)
         {
-            _logger.LogInformation($"Update value on cache: achievement:{id}");
             int calculatedRatio = CalculateCompletionRatio(id);
             _cache.SetString($"achievement:{id}", calculatedRatio.ToString());
             return calculatedRatio;
