@@ -1,0 +1,15 @@
+meta {
+  name: Delete achievement
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{base_url}}/achievements/{{achieve_id}}
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  achieve_id: 94
+}

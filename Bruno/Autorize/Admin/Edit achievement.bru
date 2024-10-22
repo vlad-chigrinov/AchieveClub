@@ -1,0 +1,29 @@
+meta {
+  name: Edit achievement
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{base_url}}/achievements/{{achieve_id}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title_en": "Улыбочку",
+    "title_ru": "Улыбочку",
+    "title_pl": "Улыбочку",
+    "description_en": "Попасть на фотографию в группе Instagram",
+    "description_ru": "Попасть на фотографию в группе Instagram",
+    "description_pl": "Попасть на фотографию в группе Instagram",
+    "logoURL": "icons/achievements/ulybochku.png",
+    "xp": 150,
+    "isMultiple" : false
+  }
+}
+
+vars:pre-request {
+  achieve_id: 85
+}
