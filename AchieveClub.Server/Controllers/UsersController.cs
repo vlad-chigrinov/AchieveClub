@@ -60,6 +60,18 @@ namespace AchieveClub.Server.Controllers
         }
 
         [HttpGet]
+        public ActionResult<List<UserState>> GetStudents()
+        {
+            return _db.Users
+                .Include(u => u.Club)
+                .Include(u => u.Role)
+                .Where(u=>u.Role.Title == "Student")
+                .ToList()
+                .Select(u => u.ToUserState(_userStatistics.GetXpSumById(u.Id), CultureInfo.CurrentCulture.Name))
+                .ToList();
+        }
+
+        [HttpGet("all")]
         public ActionResult<List<UserState>> GetAll()
         {
             return _db.Users
