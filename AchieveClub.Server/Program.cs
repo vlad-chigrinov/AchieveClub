@@ -121,15 +121,18 @@ namespace AchieveClub.Server
                 ?? throw new InvalidConfigurationException("Add 'DefaultConnection' to config");
             builder.Services.AddDbContext<ApplicationContext>(options => options.UseNpgsql(connectionString));
 
-            builder.WebHost.ConfigureKestrel(options =>
+            if (builder.Environment.IsProduction())
             {
-                options.ConfigureHttpsDefaults(options =>
+                builder.WebHost.ConfigureKestrel(options =>
                 {
-                    options.ServerCertificate = X509Certificate2.CreateFromPemFile(
-                        builder.Configuration["Certificates:Public"],
-                        builder.Configuration["Certificates:Private"]);
+                    options.ConfigureHttpsDefaults(options =>
+                    {
+                        options.ServerCertificate = X509Certificate2.CreateFromPemFile(
+                            builder.Configuration["Certificates:Public"],
+                            builder.Configuration["Certificates:Private"]);
+                    });
                 });
-            });
+            }
 
             var app = builder.Build();
 
