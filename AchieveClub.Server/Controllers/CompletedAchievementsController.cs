@@ -1,9 +1,11 @@
-﻿using AchieveClub.Server.RepositoryItems;
+﻿using AchieveClub.Server.Contract.Responce;
+using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
 using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace AchieveClub.Server.Controllers
@@ -37,6 +39,17 @@ namespace AchieveClub.Server.Controllers
 
             return _completedCache.GetByUserId(userId);
         }
+
+        [HttpGet("{id:int}/detailed")]
+        public ActionResult<List<DetailedCompletedAchievementResponce>> GetDetailed([FromRoute] int id)
+        {
+            return _db.CompletedAchievements
+                .Where(ca => ca.UserRefId == id)
+                .Include(ca => ca.Supervisor)
+                .Select(a => a.MapToDetailed())
+                .ToList();
+        }
+
 
         [HttpGet("{userId}")]
         public ActionResult<List<CompletedAchievementState>> GetByUserId([FromRoute] int userId)

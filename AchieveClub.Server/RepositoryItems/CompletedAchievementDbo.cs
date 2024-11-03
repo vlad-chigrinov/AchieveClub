@@ -1,4 +1,5 @@
-﻿using AchieveClubServer.Data.DTO;
+﻿using AchieveClub.Server.Contract.Responce;
+using AchieveClubServer.Data.DTO;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,6 +22,17 @@ namespace AchieveClub.Server.RepositoryItems
 
         [ForeignKey(nameof(AchieveRefId))]
         public AchievementDbo Achievement { get; set; }
+
+        public DetailedCompletedAchievementResponce MapToDetailed()
+        {
+            return new DetailedCompletedAchievementResponce
+            {
+                AchieveId = this.AchieveRefId,
+                SupervisorId = this.SupervisorRefId,
+                SupervisorName = this.Supervisor.FirstName + " " + this.Supervisor.LastName,
+                CompletionDate = this.DateOfCompletion
+            };
+        }
     }
     public record CompletedAchievementState(int AchieveId, int CompletionCount);
 }
