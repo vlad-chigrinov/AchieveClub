@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
@@ -102,6 +103,8 @@ namespace AchieveClub.Server
 
             builder.Services.AddControllers();
 
+            builder.Services.AddSignalR();
+
             builder.Services.AddApiVersioning(config =>
             {
                 config.DefaultApiVersion = new ApiVersion(1, 0);
@@ -169,6 +172,8 @@ namespace AchieveClub.Server
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.MapHub<AchieveHub>("/achieve");
 
             if (app.Environment.IsDevelopment())
             {

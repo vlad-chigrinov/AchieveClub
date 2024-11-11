@@ -5,6 +5,7 @@ using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
@@ -17,7 +18,8 @@ namespace AchieveClub.Server.Controllers
         AchievementStatisticsService achievementStatistics,
         UserStatisticsService userStatistics,
         ClubStatisticsService clubStatistics,
-        CompletedAchievementsCache completedCache
+        CompletedAchievementsCache completedCache,
+        IHubContext<AchieveHub> hub
         ) : ControllerBase
     {
         private readonly ApplicationContext _db = db;
@@ -25,6 +27,7 @@ namespace AchieveClub.Server.Controllers
         private readonly UserStatisticsService _userStatistics = userStatistics;
         private readonly ClubStatisticsService _clubStatistics = clubStatistics;
         private readonly CompletedAchievementsCache _completedCache = completedCache;
+        private readonly IHubContext<AchieveHub> _hub = hub;
 
         [Authorize]
         [HttpGet("current")]
@@ -92,9 +95,9 @@ namespace AchieveClub.Server.Controllers
 
         [Authorize(Roles = "Supervisor, Admin")]
         [HttpPost]
-        public ActionResult CompleteAchievements(CompleteAchievementModel model)
+        public async Task<ActionResult> CompleteAchievements(CompleteAchievementModel model, CancellationToken ct)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Id == model.UserId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == model.UserId, ct);
 
             if (user == null)
                 return BadRequest("UserId is invalid");
@@ -102,13 +105,13 @@ namespace AchieveClub.Server.Controllers
             var achievements = new List<AchievementDbo>();
             foreach (var achieveId in model.AchievementIds)
             {
-                var achievement = _db.Achievements.FirstOrDefault(u => u.Id == achieveId);
+                var achievement = await _db.Achievements.FirstOrDefaultAsync(u => u.Id == achieveId, ct);
 
                 if (achievement == null)
                     return BadRequest("One of AchieveIds is invalid!");
 
                 if (achievement.IsMultiple == false)
-                    if (_db.CompletedAchievements.Any(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id))
+                    if (await _db.CompletedAchievements.AnyAsync(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id, ct))
                         return BadRequest("Multiple achievements not supported");
 
                 achievements.Add(achievement);
@@ -125,13 +128,15 @@ namespace AchieveClub.Server.Controllers
                     SupervisorRefId = supervisorId
                 });
 
-            _db.SaveChanges();
+            await _db.SaveChangesAsync(ct);
 
             _userStatistics.UpdateXpSumById(model.UserId);
             _clubStatistics.UpdateAvgXpById(user.ClubRefId);
             foreach (var achievementId in model.AchievementIds)
                 _achievementStatistics.UpdateCompletedRatioById(achievementId);
             _completedCache.UpdateByUserId(model.UserId);
+
+            await _hub.Clients.All.SendAsync("competed:" + model.UserId);
 
             return Ok();
         }
