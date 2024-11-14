@@ -136,7 +136,7 @@ namespace AchieveClub.Server.Controllers
                 _achievementStatistics.UpdateCompletedRatioById(achievementId);
             _completedCache.UpdateByUserId(model.UserId);
 
-            await _hub.Clients.All.SendAsync("competed:" + model.UserId);
+            await _hub.Clients.All.SendAsync("completed:" + model.UserId);
 
             return Ok();
         }
