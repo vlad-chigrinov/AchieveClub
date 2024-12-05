@@ -15,9 +15,9 @@ namespace AchieveClub.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> Upload(IFormFile file)
         {
-            var cookie = Request.Cookies["X-User-Id"];
-            if (cookie == null || int.TryParse(cookie, out int userId) == false)
-                return BadRequest("User not found!");
+            var userName = HttpContext.User.Identity?.Name;
+            if (userName == null || int.TryParse(userName, out int userId) == false)
+                return Unauthorized("User not found!");
 
             var user = _db.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null)
