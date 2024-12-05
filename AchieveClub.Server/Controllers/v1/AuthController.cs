@@ -94,32 +94,6 @@ namespace AchieveClub.Server.Controllers.v1
             return Ok();
         }
 
-        [HttpPatch("change_password")]
-        public ActionResult ChangePassword(ChangePasswordRequest model)
-        {
-            if (emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode) == false)
-                return Unauthorized();
-
-            var passwordHash = hasher.HashPassword(model.Password).ToString();
-
-            var user = db.Users.FirstOrDefault(u => u.Email == model.EmailAddress);
-
-            if (user == null)
-                return BadRequest();
-
-            user.Password = passwordHash;
-            db.Update(user);
-            if (db.SaveChanges() != 1)
-            {
-                return BadRequest();
-            }
-            else
-            {
-                emailProof.DeleteProofCode(model.EmailAddress);
-                return Ok();
-            }
-        }
-
         [HttpGet("refresh")]
         public ActionResult Refresh()
         {
