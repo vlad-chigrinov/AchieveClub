@@ -13,7 +13,6 @@ public class ApplicationContext : DbContext
 
     public DbSet<UserDbo> Users { get; set; } = null!;
     public DbSet<ClubDbo> Clubs { get; set; } = null!;
-    public DbSet<SupervisorDbo> Supervisors { get; set; } = null!;
     public DbSet<AchievementDbo> Achievements { get; set; } = null!;
     public DbSet<CompletedAchievementDbo> CompletedAchievements { get; set; } = null!;
     public DbSet<RoleDbo> Roles { get; set; } = null!;

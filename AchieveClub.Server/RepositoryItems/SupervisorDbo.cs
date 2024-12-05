@@ -1,9 +1,8 @@
-﻿namespace AchieveClub.Server.RepositoryItems
+﻿namespace AchieveClub.Server.RepositoryItems;
+
+public class SupervisorDbo
 {
-    public class SupervisorDbo
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Key { get; set; }
-    }
+    public int Id { get; set; }
+    public required string Name { get; set; }
+    public required string Key { get; set; }
 }

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text.Json;
@@ -36,15 +35,12 @@ namespace AchieveClub.Server.SwaggerVersioning
             {
                 var description = apiDescription.ParameterDescriptions.First(p => p.Name == parameter.Name);
 
-                parameter.Description ??= description.ModelMetadata?.Description;
+                parameter.Description ??= description.ModelMetadata.Description;
 
                 if (parameter.Schema.Default == null &&
-                     description.DefaultValue != null &&
-                     description.DefaultValue is not DBNull &&
-                     description.ModelMetadata is ModelMetadata modelMetadata)
+                    description.DefaultValue != null)
                 {
-                    // REF: https://github.com/Microsoft/aspnet-api-versioning/issues/429#issuecomment-605402330
-                    var json = JsonSerializer.Serialize(description.DefaultValue, modelMetadata.ModelType);
+                    var json = JsonSerializer.Serialize(description.DefaultValue, description.ModelMetadata.ModelType);
                     parameter.Schema.Default = OpenApiAnyFactory.CreateFromJson(json);
                 }
 

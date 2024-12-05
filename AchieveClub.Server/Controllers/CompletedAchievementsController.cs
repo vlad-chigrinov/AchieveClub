@@ -4,7 +4,7 @@ using AchieveClub.Server.Services;
 using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -55,6 +55,7 @@ namespace AchieveClub.Server.Controllers
 
 
         [HttpGet("{userId}")]
+        [OutputCache(Tags = ["completedachievements"], Duration = (10 * 60), VaryByRouteValueNames = ["userId"])]
         public ActionResult<List<CompletedAchievementState>> GetByUserId([FromRoute] int userId)
         {
             if (_db.Users.Any(x => x.Id == userId) == false)
@@ -65,7 +66,7 @@ namespace AchieveClub.Server.Controllers
 
         [Authorize(Roles = "Supervisor, Admin")]
         [HttpDelete]
-        public ActionResult CancelCompleteAchievements(CompleteAchievementModel model)
+        public async Task<ActionResult> CancelCompleteAchievements(CompleteAchievementModel model)
         {
             var user = _db.Users.FirstOrDefault(u => u.Id == model.UserId);
 
@@ -87,7 +88,7 @@ namespace AchieveClub.Server.Controllers
             _userStatistics.UpdateXpSumById(model.UserId);
             _clubStatistics.UpdateAvgXpById(user.ClubRefId);
             foreach (var achievementId in model.AchievementIds)
-                _achievementStatistics.UpdateCompletedRatioById(achievementId);
+                await _achievementStatistics.Clear(achievementId);
             _completedCache.UpdateByUserId(model.UserId);
 
             return Ok();
@@ -117,7 +118,11 @@ namespace AchieveClub.Server.Controllers
                 achievements.Add(achievement);
             }
 
-            var supervisorId = int.Parse(HttpContext.User.Identities.First().Name);
+            if (!int.TryParse(HttpContext.User.Identity?.Name ?? "", out int supervisorId))
+                return BadRequest("SupervisorId is invalid");
+
+            if(!_db.Users.Any(a=>a.Id == supervisorId))
+                return BadRequest("Supervisor not found");
 
             foreach (var achievement in achievements)
                 _db.CompletedAchievements.Add(new CompletedAchievementDbo
@@ -133,7 +138,7 @@ namespace AchieveClub.Server.Controllers
             _userStatistics.UpdateXpSumById(model.UserId);
             _clubStatistics.UpdateAvgXpById(user.ClubRefId);
             foreach (var achievementId in model.AchievementIds)
-                _achievementStatistics.UpdateCompletedRatioById(achievementId);
+                await _achievementStatistics.Clear(achievementId);
             _completedCache.UpdateByUserId(model.UserId);
 
             await _hub.Clients.All.SendAsync("completed:" + model.UserId);

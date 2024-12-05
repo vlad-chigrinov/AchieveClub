@@ -1,7 +1,4 @@
-﻿using AchieveClub.Server.RepositoryItems;
-using System.Runtime.CompilerServices;
-
-namespace AchieveClub.Server.Contract.Responce
+﻿namespace AchieveClub.Server.Contract.Responce
 {
     public class DetailedCompletedAchievementResponce
     {

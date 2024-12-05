@@ -1,5 +1,4 @@
 ﻿using AchieveClub.Server.RepositoryItems;
-using AchieveClubServer.Data.DTO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
@@ -11,16 +10,12 @@ namespace AchieveClub.Server.Services
         IDistributedCache cache,
         ILogger<CompletedAchievementsCache> logger)
     {
-        private readonly ApplicationContext _db = db;
-        private readonly IDistributedCache _cache = cache;
-        private readonly ILogger<CompletedAchievementsCache> _logger = logger;
-
         public List<CompletedAchievementState> GetByUserId(int userId)
         {
-            var completedStatesString = _cache.GetString($"{nameof(CompletedAchievementState)}:{userId}");
+            var completedStatesString = cache.GetString($"{nameof(CompletedAchievementState)}:{userId}");
             if (completedStatesString == null)
             {
-                _logger.LogDebug($"Update value in cache: {nameof(CompletedAchievementState)}:{userId}");
+                logger.LogDebug($"Update value in cache: {nameof(CompletedAchievementState)}:{userId}");
                 return UpdateByUserId(userId);
             }
             else
@@ -29,10 +24,10 @@ namespace AchieveClub.Server.Services
                 if (completedStates == null)
                 {
                     var error = $"Error on deserializing {nameof(CompletedAchievementState)}:{userId} from cache!";
-                    _logger.LogError(error);
+                    logger.LogError(error);
                     throw new Exception(error);
                 }
-                _logger.LogDebug($"Get {nameof(CompletedAchievementState)}:{userId} from cache");
+                logger.LogDebug($"Get {nameof(CompletedAchievementState)}:{userId} from cache");
                 return completedStates;
             }
         }
@@ -40,16 +35,16 @@ namespace AchieveClub.Server.Services
         public List<CompletedAchievementState> UpdateByUserId(int userId)
         {
             var completedStates = RecalculateUser(userId);
-            _cache.SetString(
+            cache.SetString(
                 $"{nameof(CompletedAchievementState)}:{userId}",
                 SerializeAchievements(completedStates));
-            _logger.LogInformation($"Store {nameof(CompletedAchievementState)}:{userId} in cache");
+            logger.LogInformation($"Store {nameof(CompletedAchievementState)}:{userId} in cache");
             return completedStates;
         }
 
         private List<CompletedAchievementState> RecalculateUser(int userId)
         {
-            var completedDtos = _db.CompletedAchievements.Include(ca => ca.Achievement).Where(ca => ca.UserRefId == userId).ToList();
+            var completedDtos = db.CompletedAchievements.Include(ca => ca.Achievement).Where(ca => ca.UserRefId == userId).ToList();
 
             if (completedDtos.Count == 0)
                 return new();
@@ -58,7 +53,7 @@ namespace AchieveClub.Server.Services
 
             foreach (var completedDto in completedDtos)
             {
-                if (completedDto.Achievement.IsMultiple)
+                if (completedDto.Achievement!.IsMultiple)
                 {
                     if (completedStates.Any(ca => ca.AchieveId == completedDto.AchieveRefId))
                         continue;

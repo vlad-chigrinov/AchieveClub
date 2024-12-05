@@ -1,12 +1,11 @@
 using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
-using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using System.Security.Claims;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -46,6 +45,7 @@ namespace AchieveClub.Server.Controllers
         }
 
         [HttpGet("{userId}")]
+        [OutputCache(Duration = (10 * 60), Tags = ["users"], VaryByRouteValueNames = ["userId"])]
         public ActionResult<UserState> GetById([FromRoute] int userId)
         {
             var result = _db.Users.Include(u => u.Club).FirstOrDefault(u => u.Id == userId);
@@ -60,6 +60,7 @@ namespace AchieveClub.Server.Controllers
         }
 
         [HttpGet]
+        [OutputCache(Duration = (10 * 60), Tags = ["users"])]
         public ActionResult<List<UserState>> GetStudents()
         {
             return _db.Users
@@ -72,18 +73,18 @@ namespace AchieveClub.Server.Controllers
         }
 
         [HttpGet("all")]
-        public ActionResult<List<UserState>> GetAll()
+        public async Task<ActionResult<List<UserState>>> GetAll(CancellationToken ct)
         {
-            return _db.Users
+            return (await _db.Users
                 .Include(u => u.Club)
-                .ToList()
+                .ToListAsync(ct))  
                 .Select(u => u.ToUserState(_userStatistics.GetXpSumById(u.Id), CultureInfo.CurrentCulture.Name))
                 .ToList();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{userId}")]
-        public ActionResult DeleteUser([FromRoute] int userId)
+        public async Task<ActionResult> DeleteUser([FromRoute] int userId)
         {
             var user = _db.Users.FirstOrDefault(u => u.Id == userId);
 
@@ -94,11 +95,11 @@ namespace AchieveClub.Server.Controllers
             var userCompletedAchievementsIds = _db.CompletedAchievements.Where(ca => ca.UserRefId == userId).Select(sa => sa.Id).ToList();
 
             _db.Users.Remove(user);
-            if (_db.SaveChanges() > 0)
+            if (await _db.SaveChangesAsync() > 0)
             {
                 foreach (var completedAchievementId in userCompletedAchievementsIds)
                 {
-                    _achievementsStatistics.UpdateCompletedRatioById(completedAchievementId);
+                    await _achievementsStatistics.Clear(completedAchievementId);
                 }
                 _userStatistics.DeleteXpSumById(userId);
                 _clubStatistics.UpdateAvgXpById(userClubId);

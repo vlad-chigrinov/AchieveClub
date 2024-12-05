@@ -1,9 +1,8 @@
-﻿namespace AchieveClub.Server.Auth
+﻿namespace AchieveClub.Server.Auth;
+
+public record EmailSettings
 {
-    public class EmailSettings
-    {
-        public string ApiKey { get; set; }
-        public string Email { get; set; }
-        public string Name { get; set; }
-    }
+    public string ApiKey { get; set; } = null!;
+    public string Email { get; set; } = null!;
+    public string Name { get; set; } = null!;
 }

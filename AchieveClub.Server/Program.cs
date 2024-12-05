@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Security.Cryptography.X509Certificates;
@@ -24,6 +23,17 @@ namespace AchieveClub.Server
 
             builder.Services.AddCors();
 
+            var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection")
+                ?? throw new InvalidConfigurationException("Add 'RedisConnection' to config");
+            builder.Services.AddOutputCache().AddStackExchangeRedisOutputCache(options => options.Configuration = redisConnectionString);
+            builder.Services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+            });
+#pragma warning disable EXTEXP0018
+            builder.Services.AddHybridCache();
+#pragma warning restore EXTEXP0018
+
             var emailSettings = new EmailSettings();
             builder.Configuration.Bind("EmailSettings", emailSettings);
             builder.Services.AddSingleton(emailSettings);
@@ -38,12 +48,6 @@ namespace AchieveClub.Server
             builder.Services.AddTransient<HashService>();
             builder.Services.AddTransient<EmailProofService>();
 
-            var redisConnectionString = builder.Configuration.GetConnectionString("RedisConnection")
-                ?? throw new InvalidConfigurationException("Add 'RedisConnection' to config");
-            builder.Services.AddStackExchangeRedisCache(options =>
-            {
-                options.Configuration = redisConnectionString;
-            });
             builder.Services.AddTransient<AchievementStatisticsService>();
             builder.Services.AddTransient<UserStatisticsService>();
             builder.Services.AddTransient<ClubStatisticsService>();
@@ -71,7 +75,7 @@ namespace AchieveClub.Server
                     };
                     options.SaveToken = true;
                     options.Events = new JwtBearerEvents();
-                    options.Events.OnMessageReceived = context =>
+                    options.Events.OnMessageReceived += context =>
                     {
                         if (context.Request.Cookies.ContainsKey("X-Access-Token"))
                         {
@@ -126,13 +130,13 @@ namespace AchieveClub.Server
 
             if (builder.Environment.IsProduction())
             {
-                builder.WebHost.ConfigureKestrel(options =>
+                builder.WebHost.ConfigureKestrel(kestrelOptions =>
                 {
-                    options.ConfigureHttpsDefaults(options =>
+                    kestrelOptions.ConfigureHttpsDefaults(httpsOptions =>
                     {
-                        options.ServerCertificate = X509Certificate2.CreateFromPemFile(
-                            builder.Configuration["Certificates:Public"],
-                            builder.Configuration["Certificates:Private"]);
+                        httpsOptions.ServerCertificate = X509Certificate2.CreateFromPemFile(
+                            builder.Configuration["Certificates:Public"] ?? throw new Exception("Add 'Certificates:Public' to config"),
+                            builder.Configuration["Certificates:Private"] ?? throw new Exception("Add 'Certificates:Public' to config"));
                     });
                 });
             }
@@ -161,7 +165,7 @@ namespace AchieveClub.Server
                 options.SupportedUICultures = supportedCultures;
             });
 
-            app.UseCors(builder => builder
+            app.UseCors(policyBuilder => policyBuilder
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -190,6 +194,8 @@ namespace AchieveClub.Server
                     }
                 );
             }
+
+            app.UseOutputCache();
 
             app.Run();
         }

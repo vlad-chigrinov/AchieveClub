@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace AchieveClub.Server.Services
@@ -37,7 +36,7 @@ namespace AchieveClub.Server.Services
             return _db.CompletedAchievements
                 .Where(ca => ca.UserRefId == id)
                 .Include(ca=>ca.Achievement)
-                .Select(ca=>ca.Achievement.Xp)
+                .Select(ca=>ca.Achievement!.Xp)
                 .Sum();
         }
 

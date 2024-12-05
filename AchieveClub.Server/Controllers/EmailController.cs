@@ -11,62 +11,61 @@ namespace AchieveClub.Server.Controllers
     [Route("api/[controller]")]
     [ApiController]
     public class EmailController(
-        IStringLocalizer<EmailController> localizer,
         ILogger<EmailController> logger,
+        IStringLocalizer<EmailController> localizer,
         EmailProofService emailProof,
         EmailSettings emailSettings,
         ApplicationContext db
         ) : ControllerBase
     {
-        private readonly ApplicationContext _db = db;
-        private readonly IStringLocalizer<EmailController> _localizer = localizer;
-        private readonly ILogger<EmailController> _logger = logger;
-        private readonly EmailProofService _emailProof = emailProof;
-        private readonly EmailSettings _emailSettings = emailSettings;
 
         [HttpPost("change_password")]
-        public async Task<ActionResult> SendChangePasswordCode([FromBody] string emailAddress)
+        public async Task<ActionResult> SendChangePasswordCode([FromBody] string emailAddress, CancellationToken ct)
         {
-            if (_emailProof.Contains(emailAddress))
+            if (emailProof.Contains(emailAddress))
                 return Conflict("timeout");
 
-            if (_db.Users.Any(u => u.Email == emailAddress) == false)
+            if (db.Users.Any(u => u.Email == emailAddress) == false)
                 return Conflict("email");
 
-            int proofCode = _emailProof.GenerateProofCode(emailAddress);
+            int proofCode = emailProof.GenerateProofCode(emailAddress);
 
-            var apiKey = _emailSettings.ApiKey;
+            var apiKey = emailSettings.ApiKey;
             var client = new SendGridClient(apiKey);
-            var from = new EmailAddress(_emailSettings.Email, _emailSettings.Name);
-            var subject = _localizer["Confirm password change"];
+            var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
+            var subject = localizer["Confirm password change"];
             var to = new EmailAddress(emailAddress);
-            var htmlContent = $"<h3>{_localizer["Your code"]}: <code>{proofCode}</code></h3>";
+            var htmlContent = $"<h3>{localizer["Your code"]}: <code>{proofCode}</code></h3>";
             var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
-            var response = await client.SendEmailAsync(msg);
+            var response = await client.SendEmailAsync(msg, ct);
 
-            if (response.IsSuccessStatusCode)
-                return Ok();
-            else
+            if (response.IsSuccessStatusCode == false)
+            {
+                logger.LogInformation("Could not send proof code email");
                 return BadRequest(response.StatusCode);
+            }
+
+            logger.LogInformation("Code sent successfully");
+            return Ok();
         }
 
         [HttpPost("proof_email")]
         public async Task<ActionResult> SendEmailProofCode([FromBody] string emailAddress)
         {
-            if (_emailProof.Contains(emailAddress))
+            if (emailProof.Contains(emailAddress))
                 return Conflict("timeout");
 
-            if (_db.Users.Any(u => u.Email == emailAddress))
+            if (db.Users.Any(u => u.Email == emailAddress))
                 return Conflict("email");
 
-            int proofCode = _emailProof.GenerateProofCode(emailAddress);
+            int proofCode = emailProof.GenerateProofCode(emailAddress);
 
-            var apiKey = _emailSettings.ApiKey;
+            var apiKey = emailSettings.ApiKey;
             var client = new SendGridClient(apiKey);
-            var from = new EmailAddress(_emailSettings.Email, _emailSettings.Name);
-            var subject = _localizer["Registration confirmation"];
+            var from = new EmailAddress(emailSettings.Email, emailSettings.Name);
+            var subject = localizer["Registration confirmation"];
             var to = new EmailAddress(emailAddress);
-            var htmlContent = $"<h3>{_localizer["Your code"]}: <code>{proofCode}</code></h3>";
+            var htmlContent = $"<h3>{localizer["Your code"]}: <code>{proofCode}</code></h3>";
             var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlContent);
             var response = await client.SendEmailAsync(msg);
 
@@ -79,7 +78,7 @@ namespace AchieveClub.Server.Controllers
         [HttpPost("validate_code")]
         public ActionResult ValidateProofCode([FromBody] ProofCodeRequest model)
         {
-            if (_emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode))
+            if (emailProof.ValidateProofCode(model.EmailAddress, model.ProofCode))
                 return Ok();
             else
                 return Unauthorized();

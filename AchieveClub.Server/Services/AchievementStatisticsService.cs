@@ -1,57 +1,47 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace AchieveClub.Server.Services
 {
-    public class AchievementStatisticsService(IDistributedCache cache, ApplicationContext db, ILogger<AchievementStatisticsService> logger)
+    public class AchievementStatisticsService(HybridCache cache, ApplicationContext db, ILogger<AchievementStatisticsService> logger, IOutputCacheStore store)
     {
-        private readonly IDistributedCache _cache = cache;
+        private readonly HybridCache _cache = cache;
         private readonly ApplicationContext _db = db;
         private readonly ILogger<AchievementStatisticsService> _logger = logger;
+        private readonly IOutputCacheStore _store = store;
 
-        public int GetCompletionRatioById(int id)
+        public async ValueTask<int> GetCompletionRatioById(int id)
         {
-            var ratio = _cache.GetString($"achievement:{id}");
-            if (ratio != null)
-            {
-                _logger.LogDebug($"Get value from cache: achievement:{id}");
-                return int.Parse(ratio);
-            }
-            else
-            {
-                _logger.LogDebug($"Update value in cache: achievement:{id}");
-                return UpdateCompletedRatioById(id);
-            }
+            return await _cache.GetOrCreateAsync($"achievement:{id}", async _ => await CalculateCompletionRatio(id));
         }
 
-        public int UpdateCompletedRatioById(int id)
+        private async ValueTask<int> CalculateCompletionRatio(int id)
         {
-            int calculatedRatio = CalculateCompletionRatio(id);
-            _cache.SetString($"achievement:{id}", calculatedRatio.ToString());
-            return calculatedRatio;
-        }
-
-        private int CalculateCompletionRatio(int id)
-        {
-            int completedAchievementCount = _db.CompletedAchievements
+            int completedAchievementCount = await _db.CompletedAchievements
                 .Include(ca => ca.User)
-                .ThenInclude(u => u.Role)
-                .Where(ca => ca.AchieveRefId == id && ca.User.Role.Title == "Student")
-                .Count();
-            int studentsCount = _db.Users
+                .ThenInclude(u => u!.Role)
+                .Where(ca => ca.AchieveRefId == id && ca.User!.Role.Title == "Student")
+                .CountAsync();
+            int studentsCount = await _db.Users
                 .Include(u => u.Role)
                 .Where(u=> u.Role.Title == "Student")
-                .Count();
+                .CountAsync();
             if(completedAchievementCount == 0 || studentsCount == 0)
             {
                 return 0;
             }
             else
             {
-                double ratio = (double)completedAchievementCount / (double)studentsCount;
+                double ratio = completedAchievementCount / (double)studentsCount;
                 return (int)Math.Round((ratio * 100));
             }
+        }
+
+        public async Task Clear(int id)
+        {
+            await _cache.RemoveAsync($"achievement:{id}");
+            await _store.EvictByTagAsync("achievements", CancellationToken.None);
         }
     }
 }
