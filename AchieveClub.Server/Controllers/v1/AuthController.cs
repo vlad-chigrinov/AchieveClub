@@ -1,10 +1,10 @@
-﻿using AchieveClub.Server.Auth;
+﻿using AchieveClub.Server.ApiContracts.Auth.Request;
+using AchieveClub.Server.Auth;
 using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AchieveClub.Server.Contract.Request;
 
 namespace AchieveClub.Server.Controllers.v1
 {
@@ -46,10 +46,6 @@ namespace AchieveClub.Server.Controllers.v1
         [HttpPost("registration")]
         public ActionResult Registration([FromBody] RegistrationRequest model)
         {
-            //Validate Club
-            if (db.Clubs.Any(c => c.Id == model.ClubId) == false)
-                return Conflict("clubId");
-
             //Uniq Email
             if (db.Users.Any(u => u.Email == model.EmailAddress))
                 return Conflict("email");
@@ -72,7 +68,6 @@ namespace AchieveClub.Server.Controllers.v1
                 LastName = model.LastName,
                 Avatar = model.AvatarURL,
                 Email = model.EmailAddress,
-                ClubRefId = model.ClubId,
                 Password = passwordHash,
                 RefreshToken = GenerateRefreshToken(),
                 RoleRefId = 1,
@@ -155,7 +150,8 @@ namespace AchieveClub.Server.Controllers.v1
 
         private string GenerateJwtByUser(UserDbo user)
         {
-            return jwtCreator.Generate(user.Id, user.Role.Title);
+            (string token, _) = jwtCreator.Generate(user.Id, user.Role.Title);
+            return token;
         }
 
         private string GenerateRefreshToken()

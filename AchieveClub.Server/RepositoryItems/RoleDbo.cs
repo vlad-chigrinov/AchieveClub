@@ -8,5 +8,5 @@ public class RoleDbo
 {
     public required  int Id { get; set; }
     [MaxLength(50)] public required string Title { get; set; }
-    public List<UserDbo> Users { get; set; } = Enumerable.Empty<UserDbo>().ToList();
+    public List<UserDbo> Users { get; set; } = [];
 }

@@ -13,7 +13,7 @@ namespace AchieveClub.Server.Auth
         {
             _settings = settings;
         }
-        public string Generate(int userId, string role)
+        public (string, DateTime) Generate(int userId, string role)
         {
             var claims = new List<Claim>
             {
@@ -25,14 +25,19 @@ namespace AchieveClub.Server.Auth
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var expire = DateTime.UtcNow + _settings.Expire;
+
             var token = new JwtSecurityToken(
                 _settings.Issuer,
                 _settings.Audience,
                 claims,
-                expires: DateTime.UtcNow + _settings.Expire,
+                expires: expire,
                 signingCredentials: creds
             );
-            return new JwtSecurityTokenHandler().WriteToken(token);
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return (tokenString, expire);
         }
     }
 }

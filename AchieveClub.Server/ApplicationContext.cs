@@ -12,19 +12,12 @@ public class ApplicationContext : DbContext
     }
 
     public DbSet<UserDbo> Users { get; set; } = null!;
-    public DbSet<ClubDbo> Clubs { get; set; } = null!;
     public DbSet<AchievementDbo> Achievements { get; set; } = null!;
     public DbSet<CompletedAchievementDbo> CompletedAchievements { get; set; } = null!;
     public DbSet<RoleDbo> Roles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .Entity<UserDbo>()
-            .HasOne(u => u.Club)
-            .WithMany(c => c.Users)
-            .HasForeignKey(u => u.ClubRefId)
-            .HasPrincipalKey(c => c.Id);
         modelBuilder
             .Entity<UserDbo>()
             .HasOne(u => u.Role)

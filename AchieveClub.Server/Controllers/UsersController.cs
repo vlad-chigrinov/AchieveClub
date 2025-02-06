@@ -1,11 +1,10 @@
 using AchieveClub.Server.RepositoryItems;
-using AchieveClub.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -13,126 +12,125 @@ namespace AchieveClub.Server.Controllers
     [Route("api/[controller]")]
     public class UsersController(
         ApplicationContext db,
-        UserStatisticsService userStatistics,
-        AchievementStatisticsService achievementStatistics,
-        ClubStatisticsService clubStatistics
+        ILogger<UsersController> logger
         ) : ControllerBase
     {
-        private readonly ApplicationContext _db = db;
-        private readonly UserStatisticsService _userStatistics = userStatistics;
-        private readonly AchievementStatisticsService _achievementsStatistics = achievementStatistics;
-        private readonly ClubStatisticsService _clubStatistics = clubStatistics;
-
-        public record ChangeRoleRequest([Required] int UserId, [Required] int RoleId);
+        public record ChangeRoleRequest([Required] int userId, [Required] int roleId);
 
         [Authorize]
         [HttpGet("current")]
-        public ActionResult<UserState> GetCurrent()
+        public async Task<ActionResult<UserState>> GetCurrent()
         {
-            var userName = HttpContext.User.Identity?.Name;
-            if (userName == null || int.TryParse(userName, out int userId) == false)
-                return Unauthorized("User not found!");
+            var userIdString = HttpContext.User.Identity?.Name;
+            if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
+            {
+                logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}", userIdString);
+                return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
+            }
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                logger.LogWarning("User with userId:{userId} not found", userId);
+                return NotFound($"User with userId:{userId} not found");
+            }
 
-            var result = _db.Users.Include(u => u.Club).FirstOrDefault(u => u.Id == userId);
-            if (result == null)
-            {
-                return Unauthorized("User not found!");
-            }
-            else
-            {
-                return result.ToUserState(_userStatistics.GetXpSumById(result.Id), CultureInfo.CurrentCulture.Name);
-            }
+            var xpSum = await db.CompletedAchievements
+                .Where(ca => ca.UserRefId == userId)
+                .Include(ca => ca.Achievement)
+                .SumAsync(ca => ca.Achievement.Xp);
+
+            return user.ToUserState(xpSum);
         }
 
         [HttpGet("{userId}")]
-        [OutputCache(Duration = (10 * 60), Tags = ["users"], VaryByRouteValueNames = ["userId"])]
-        public ActionResult<UserState> GetById([FromRoute] int userId)
+        public async Task<ActionResult<UserState>> GetById([FromRoute] int userId)
         {
-            var result = _db.Users.Include(u => u.Club).FirstOrDefault(u => u.Id == userId);
-            if (result == null)
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
             {
-                return BadRequest("User not found!");
+                logger.LogWarning("User with userId:{userId} not found", userId);
+                return NotFound($"User with userId:{userId} not found");
             }
-            else
-            {
-                return result.ToUserState(_userStatistics.GetXpSumById(result.Id), CultureInfo.CurrentCulture.Name);
-            }
+
+            var xpSum = await db.CompletedAchievements
+                .Where(ca => ca.UserRefId == userId)
+                .Include(ca => ca.Achievement)
+                .SumAsync(ca => ca.Achievement.Xp);
+
+            return user.ToUserState(xpSum);
         }
 
         [HttpGet]
-        [OutputCache(Duration = (10 * 60), Tags = ["users"])]
-        public ActionResult<List<UserState>> GetStudents()
+        [OutputCache(Duration = (3 * 60), Tags = ["users"])]
+        public async Task<ActionResult<List<UserState>>> GetStudents()
         {
-            return _db.Users
-                .Include(u => u.Club)
+            return await db.Users
                 .Include(u => u.Role)
-                .Where(u=>u.Role.Title == "Student")
-                .ToList()
-                .Select(u => u.ToUserState(_userStatistics.GetXpSumById(u.Id), CultureInfo.CurrentCulture.Name))
-                .ToList();
+                .Where(u => u.Role.Title == "Student")
+                .Select(u => u.ToUserState(db.CompletedAchievements
+                    .Where(ca => ca.UserRefId == u.Id)
+                    .Include(ca => ca.Achievement)
+                    .Sum(ca => ca.Achievement.Xp)))
+                .ToListAsync();
         }
 
         [HttpGet("all")]
         public async Task<ActionResult<List<UserState>>> GetAll(CancellationToken ct)
         {
-            return (await _db.Users
-                .Include(u => u.Club)
-                .ToListAsync(ct))  
-                .Select(u => u.ToUserState(_userStatistics.GetXpSumById(u.Id), CultureInfo.CurrentCulture.Name))
-                .ToList();
+            return await db.Users
+                .Select(u => u.ToUserState(db.CompletedAchievements
+                    .Where(ca => ca.UserRefId == u.Id)
+                    .Include(ca => ca.Achievement)
+                    .Sum(ca => ca.Achievement.Xp)))
+                .ToListAsync();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{userId}")]
         public async Task<ActionResult> DeleteUser([FromRoute] int userId)
         {
-            var user = _db.Users.FirstOrDefault(u => u.Id == userId);
-
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
-                return BadRequest("UserId is invalid");
-
-            var userClubId = user.ClubRefId;
-            var userCompletedAchievementsIds = _db.CompletedAchievements.Where(ca => ca.UserRefId == userId).Select(sa => sa.Id).ToList();
-
-            _db.Users.Remove(user);
-            if (await _db.SaveChangesAsync() > 0)
             {
-                foreach (var completedAchievementId in userCompletedAchievementsIds)
-                {
-                    await _achievementsStatistics.Clear(completedAchievementId);
-                }
-                _userStatistics.DeleteXpSumById(userId);
-                _clubStatistics.UpdateAvgXpById(userClubId);
-                return Ok();
+                logger.LogWarning("User with userId:{userId} not found", userId);
+                return NotFound($"User with userId:{userId} not found");
             }
-            else
-            {
-                return BadRequest("Error on delete entity from db");
-            }
+
+            db.Users.Remove(user);
+
+            await db.SaveChangesAsync();
+
+            return NoContent();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("change_role")]
-        public ActionResult ChangeUserRole([FromBody] ChangeRoleRequest model)
+        public async Task<ActionResult> ChangeUserRole([FromBody] ChangeRoleRequest request)
         {
-            if(_db.Roles.Any(r=>r.Id == model.RoleId) == false)
-                return BadRequest("Role with this RoleId does not exist");
+            if (db.Roles.Any(r => r.Id == request.roleId) == false)
+            {
+                logger.LogWarning("Role with roleId:{request.roleId} not found", request.roleId);
+                return NotFound($"Role with roleId:{request.roleId} not found");
+            }
 
-            var user = _db.Users.FirstOrDefault(u => u.Id == model.UserId);
-
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.userId);
             if (user == null)
-                return BadRequest("UserId is invalid");
+            {
+                logger.LogWarning("User with userId:{request.userId} not found", request.userId);
+                return NotFound($"User with userId:{request.userId} not found");
+            }
 
-            if (user.RoleRefId == model.RoleId)
-                return BadRequest("This role is already in use");
+            if (user.RoleRefId == request.roleId)
+            {
+                logger.LogWarning("This user:{request.userId} already has this role:{request.roleId}", request.userId, request.roleId);
+                return BadRequest($"This user:{request.userId} already has this role:{request.roleId}");
+            } 
 
-            user.RoleRefId = model.RoleId;
+            user.RoleRefId = request.roleId;
 
-            _db.Update(user);
-            if (_db.SaveChanges() > 0)
-                return Ok();
-            else
-                return BadRequest("Error on update entity on db");
+            await db.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

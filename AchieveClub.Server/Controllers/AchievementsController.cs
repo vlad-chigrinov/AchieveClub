@@ -1,11 +1,10 @@
-﻿using AchieveClub.Server.Contract.Request;
-using AchieveClub.Server.Services;
+﻿using AchieveClub.Server.ApiContracts.Achievements.Request;
+using AchieveClub.Server.ApiContracts.Achievements.Response;
 using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -13,154 +12,99 @@ namespace AchieveClub.Server.Controllers
     [Route("api/[controller]")]
     public class AchievementsController(
         ApplicationContext db,
-        ILogger<AchievementsController> logger,
-        AchievementStatisticsService achievementStatistics,
-        UserStatisticsService userStatistics,
-        CompletedAchievementsCache completedAchievementsCache
+        ILogger<AchievementsController> logger
         ) : ControllerBase
     {
         [HttpGet]
-        [OutputCache(Duration = (10 * 60),Tags = ["achievements"], VaryByRouteValueNames = ["userId"])]
-        public async Task<ActionResult<List<AchievementState>>> GetAll()
+        [OutputCache(Duration = (3 * 60), Tags = ["achievements"])]
+        public async Task<ActionResult<List<AchievementResponse>>> GetAll()
         {
-            var users = await db.Achievements.ToListAsync();
-            var userStates = users.Select(a => a.ToState(achievementStatistics.GetCompletionRatioById(a.Id).Result, CultureInfo.CurrentCulture.Name));
-            return Ok(userStates.OrderBy(a=>a.Xp).ToList());
+            var achievements = await db.Achievements.ToListAsync();
+            return achievements.Select(a=>a.ToResponse()).ToList();
         }
 
         [HttpGet("{achieveId:int}")]
-        public ActionResult<AchievementDbo> GetById([FromRoute] int achieveId)
+        public async Task<ActionResult<AchievementResponse>> GetById([FromRoute] int achieveId)
         {
-            var achieve = db.Achievements.FirstOrDefault(a => a.Id == achieveId);
+            var achieve = await db.Achievements.FirstOrDefaultAsync(a => a.Id == achieveId);
 
-            if(achieve == null)
+            if (achieve == null)
             {
-                var error = $"Achievement with name: {achieveId} not exists";
-                logger.LogWarning(error);
-                return BadRequest(error);
+                logger.LogWarning("Achievement with name: {achieveId} not exists", achieveId);
+                return NotFound($"Achievement with name: {achieveId} not exists");
             }
 
-            return Ok(achieve);
+            return achieve.ToResponse();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public ActionResult<int> Create([FromBody] CreateAchievementRequest model)
+        public async Task<ActionResult<int>> Create([FromBody] CreateAchievementRequest model)
         {
-            if (db.Achievements.Any(a => a.Title_en == model.Title_en))
+            if (await db.Achievements.AnyAsync(a => a.Title == model.Title))
             {
-                var error = $"Achievement with name: {model.Title_en} already exists";
-                logger.LogWarning(error);
-                return BadRequest(error);
+                logger.LogWarning("Achievement with name: {model.Title} already exists: {model}", model.Title, model);
+                return Conflict($"Achievement with name: {model.Title} already exists");
             }
 
             var newAchievement = new AchievementDbo
             {
-                Title_en = model.Title_en,
-                Title_ru = model.Title_ru,
-                Title_pl = model.Title_pl,
-                Description_en = model.Description_en,
-                Description_ru = model.Description_ru,
-                Description_pl = model.Description_pl,
+                Title = model.Title,
+                Description = model.Description,
                 LogoURL = model.LogoURL,
                 Xp = model.Xp,
                 IsMultiple = model.IsMultiple
             };
 
-            db.Achievements.Add(newAchievement);
+            var entry = await db.Achievements.AddAsync(newAchievement);
 
-            if (db.SaveChanges() == 0)
-            {
-                var error = "Error on add entity to db";
-                logger.LogError(error);
-                return BadRequest(error);
-            }
-
-            return Ok(newAchievement.Id);
+            await db.SaveChangesAsync();
+            logger.LogInformation("Achievement created: {newAchievement.Title}[{newAchievement.Id}]", newAchievement.Title, newAchievement.Id);
+            
+            return entry.Entity.Id;
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{achieveId:int}")]
-        public ActionResult Update([FromRoute] int achieveId, [FromBody] CreateAchievementRequest request)
+        public async Task<ActionResult> Update([FromRoute] int achieveId, [FromBody] CreateAchievementRequest request)
         {
-            var achievement = db.Achievements.FirstOrDefault(a => a.Id == achieveId);
+            var achievement = await db.Achievements.FirstOrDefaultAsync(a => a.Id == achieveId);
 
             if (achievement == null)
             {
-                var error = $"Achievement with id {achieveId} not found!";
-                logger.LogWarning(error);
-                return BadRequest(error);
+                logger.LogWarning($"Achievement with id {achieveId} not found!", achieveId);
+                return NotFound($"Achievement with id {achieveId} not found!");
             }
 
-            var isMultipleChanged = request.IsMultiple != achievement.IsMultiple;
-            var isXpChanged = request.Xp != achievement.Xp;
-
-            List<int> userIds = Enumerable.Empty<int>().ToList();
-            if (isMultipleChanged || isXpChanged)
-            {
-                userIds = db.CompletedAchievements.Where(ca => ca.AchieveRefId == achieveId).Select(ca => ca.UserRefId).Distinct().ToList();
-            }
-
-            achievement.Title_en = request.Title_en;
-            achievement.Title_ru = request.Title_ru;
-            achievement.Title_pl = request.Title_pl;
-            achievement.Description_en = request.Description_en;
-            achievement.Description_ru = request.Description_ru;
-            achievement.Description_en = request.Description_en;
+            achievement.Title = request.Title;
+            achievement.Description = request.Description;
             achievement.LogoURL = request.LogoURL;
             achievement.Xp = request.Xp;
             achievement.IsMultiple = request.IsMultiple;
 
-            db.Update(achievement);
-
-            if (db.SaveChanges() == 0)
-            {
-                var error = "Error on update entity on db";
-                logger.LogError(error);
-                return BadRequest(error);
-            }
-
-            if (isMultipleChanged)
-            {
-                userIds.ForEach(id => completedAchievementsCache.UpdateByUserId(id));
-            }
-
-            if (isXpChanged)
-            {
-                userIds.ForEach(id => userStatistics.UpdateXpSumById(id));
-            }
-
-            return Ok();
+            await db.SaveChangesAsync();
+            logger.LogInformation("Achievement updated: {request}", request);
+            
+            return NoContent();
         }
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{achieveId:int}")]
-        public ActionResult Delete([FromRoute] int achieveId)
+        public async Task<ActionResult> Delete([FromRoute] int achieveId)
         {
-            var achievement = db.Achievements.FirstOrDefault(a => a.Id == achieveId);
+            var achievement = await db.Achievements.FirstOrDefaultAsync(a => a.Id == achieveId);
 
             if (achievement == null)
             {
-                var error = $"Achievement with id {achieveId} not found!";
-                logger.LogWarning(error);
-                return BadRequest(error);
+                logger.LogWarning("Achievement with id {achieveId} not found!", achieveId);
+                return NotFound($"Achievement with id {achieveId} not found!");
             }
-
-            var userIds = db.CompletedAchievements.Where(ca => ca.AchieveRefId == achieveId).Select(ca => ca.UserRefId).Distinct().ToList();
 
             db.Remove(achievement);
-
-            if (db.SaveChanges() == 0)
-            {
-                var error = "Error on delete entity on db";
-                logger.LogError(error);
-                return BadRequest(error);
-            }
-
-            userIds.ForEach(id => completedAchievementsCache.UpdateByUserId(id));
-            userIds.ForEach(id => userStatistics.UpdateXpSumById(id));
-
-            return Ok();
+            await db.SaveChangesAsync();
+            
+            logger.LogInformation("Achievement deleted: {achievement}", achievement);
+            return NoContent();
         }
     }
 }

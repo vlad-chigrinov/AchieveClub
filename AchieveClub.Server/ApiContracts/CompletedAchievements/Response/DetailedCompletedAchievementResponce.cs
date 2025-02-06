@@ -1,4 +1,4 @@
-﻿namespace AchieveClub.Server.Contract.Responce
+﻿namespace AchieveClub.Server.ApiContracts.CompletedAchievements.Response
 {
     public class DetailedCompletedAchievementResponce
     {

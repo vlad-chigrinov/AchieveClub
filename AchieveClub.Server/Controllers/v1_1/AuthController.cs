@@ -1,6 +1,6 @@
-﻿using AchieveClub.Server.Auth;
-using AchieveClub.Server.Contract.Request;
-using AchieveClub.Server.Contract.Responce;
+﻿using AchieveClub.Server.ApiContracts.Auth.Request;
+using AchieveClub.Server.ApiContracts.Auth.Response;
+using AchieveClub.Server.Auth;
 using AchieveClub.Server.RepositoryItems;
 using AchieveClub.Server.Services;
 using Asp.Versioning;
@@ -36,9 +36,9 @@ namespace AchieveClub.Server.Controllers.v1_1
                 if (db.SaveChanges() != 1)
                     return Unauthorized();
 
-                var token = GenerateJwtByUser(user);
+                (string token, long expire) = GenerateJwtByUser(user);
 
-                return Ok(new TokenPairResponce(user.Id, token, user.RefreshToken));
+                return new TokenPairResponce(user.Id, token, user.RefreshToken, expire);
             }
             else return BadRequest();
         }
@@ -46,10 +46,6 @@ namespace AchieveClub.Server.Controllers.v1_1
         [HttpPost("registration")]
         public ActionResult<TokenPairResponce> Registration([FromBody] RegistrationRequest model)
         {
-            //Validate Club
-            if (db.Clubs.Any(c => c.Id == model.ClubId) == false)
-                return Conflict("clubId");
-
             //Uniq Email
             if (db.Users.Any(u => u.Email == model.EmailAddress))
                 return Conflict("email");
@@ -72,7 +68,6 @@ namespace AchieveClub.Server.Controllers.v1_1
                 LastName = model.LastName,
                 Avatar = model.AvatarURL,
                 Email = model.EmailAddress,
-                ClubRefId = model.ClubId,
                 Password = passwordHash,
                 RefreshToken = GenerateRefreshToken(),
                 RoleRefId = 1,
@@ -86,10 +81,11 @@ namespace AchieveClub.Server.Controllers.v1_1
 
             db.Users.Include(u => u.Role);
 
-            var token = GenerateJwtByUser(newUser);
+            (string token, long expire) = GenerateJwtByUser(newUser);
 
             emailProof.DeleteProofCode(model.EmailAddress);
-            return Ok(new TokenPairResponce(newUser.Id, token, newUser.RefreshToken));
+            
+            return new TokenPairResponce(newUser.Id, token, newUser.RefreshToken, expire);
         }
 
         [HttpPost("refresh")]
@@ -109,14 +105,16 @@ namespace AchieveClub.Server.Controllers.v1_1
             if (db.SaveChanges() != 1)
                 return Unauthorized();
 
-            var token = GenerateJwtByUser(user);
+            (string token, long expire) = GenerateJwtByUser(user);
 
-            return Ok(new TokenPairResponce(user.Id, token, user.RefreshToken));
+            return new TokenPairResponce(user.Id, token, user.RefreshToken, expire);
         }
 
-        private string GenerateJwtByUser(UserDbo user)
+        private (string, long) GenerateJwtByUser(UserDbo user)
         {
-            return jwtCreator.Generate(user.Id, user.Role.Title);
+            (string token, DateTime expire) = jwtCreator.Generate(user.Id, user.Role.Title);
+
+            return (token, ((DateTimeOffset)expire).ToUnixTimeSeconds());
         }
 
         private string GenerateRefreshToken()

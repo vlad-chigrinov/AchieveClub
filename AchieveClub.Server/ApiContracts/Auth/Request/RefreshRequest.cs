@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AchieveClub.Server.Contract.Request
+namespace AchieveClub.Server.ApiContracts.Auth.Request
 {
     public record RefreshRequest(
             [Required, Range(1, double.MaxValue)] int UserId,

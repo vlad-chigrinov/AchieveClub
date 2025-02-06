@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AchieveClub.Server.Contract.Request
+namespace AchieveClub.Server.ApiContracts.Auth.Request
 {
     public record ChangePasswordRequest(
         [Required, EmailAddress] string EmailAddress,
