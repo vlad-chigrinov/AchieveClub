@@ -7,17 +7,17 @@ meta {
 put {
   url: {{base_url}}/achievements/{{achieve_id}}
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5YjQwMmEwNS1kY2ZlLTRiZGMtYjM3Mi1hMTJmNzE1Yjk0MjQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTEzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3Mzg4NDE2ODAsImlzcyI6Im1vYmlsZSBjbGllbnQiLCJhdWQiOiJ3ZWIgYXBpIn0.B2z3-EjbwmkK2NbDLZESDK8pBzx_-m_v1jSc_MmjKpY
 }
 
 body:json {
   {
-    "title_en": "Улыбочку",
-    "title_ru": "Улыбочку",
-    "title_pl": "Улыбочку",
-    "description_en": "Попасть на фотографию в группе Instagram",
-    "description_ru": "Попасть на фотографию в группе Instagram",
-    "description_pl": "Попасть на фотографию в группе Instagram",
+    "title": "Улыбочку",
+    "description": "Попасть на фотографию в группе Instagram",
     "logoURL": "icons/achievements/ulybochku.png",
     "xp": 150,
     "isMultiple" : false

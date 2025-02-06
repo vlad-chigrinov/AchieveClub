@@ -1,13 +1,5 @@
-meta {
-  name: Ping
-  type: http
-  seq: 1
-}
-
-get {
-  url: {{base_url}}/ping/supervisor
-  body: none
-  auth: bearer
+auth {
+  mode: bearer
 }
 
 auth:bearer {

@@ -7,9 +7,13 @@ meta {
 post {
   url: {{base_url}}/avatar
   body: multipartForm
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyYjkzZDhjNS1mMGM0LTRkYmMtYTFmMy1jMTUzNjRlYTA1YjUiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiMTEzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3Mzg4Mzc2NzksImlzcyI6Im1vYmlsZSBjbGllbnQiLCJhdWQiOiJ3ZWIgYXBpIn0.gRs6PN6DhHjyZDNY6dbK-w6gbeBTwdIaf7H-hGsB5WY
 }
 
 body:multipart-form {
-  file: @file(C:\Users\vladi\Downloads\kamenka.png)
+  file: @file(C:\Users\vladi\Pictures\users\ab67616d0000b2736d2a9058ad8a6382f0a15d9b.jpg)
 }
