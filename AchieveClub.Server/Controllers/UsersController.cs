@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 
 namespace AchieveClub.Server.Controllers
@@ -15,7 +14,7 @@ namespace AchieveClub.Server.Controllers
         ILogger<UsersController> logger
         ) : ControllerBase
     {
-        public record ChangeRoleRequest([Required] int userId, [Required] int roleId);
+        public record ChangeRoleRequest([Required] int UserId, [Required] int RoleId);
 
         [Authorize]
         [HttpGet("current")]
@@ -37,7 +36,7 @@ namespace AchieveClub.Server.Controllers
             var xpSum = await db.CompletedAchievements
                 .Where(ca => ca.UserRefId == userId)
                 .Include(ca => ca.Achievement)
-                .SumAsync(ca => ca.Achievement.Xp);
+                .SumAsync(ca => ca.Achievement!.Xp);
 
             return user.ToUserState(xpSum);
         }
@@ -55,7 +54,7 @@ namespace AchieveClub.Server.Controllers
             var xpSum = await db.CompletedAchievements
                 .Where(ca => ca.UserRefId == userId)
                 .Include(ca => ca.Achievement)
-                .SumAsync(ca => ca.Achievement.Xp);
+                .SumAsync(ca => ca.Achievement!.Xp);
 
             return user.ToUserState(xpSum);
         }
@@ -70,7 +69,7 @@ namespace AchieveClub.Server.Controllers
                 .Select(u => u.ToUserState(db.CompletedAchievements
                     .Where(ca => ca.UserRefId == u.Id)
                     .Include(ca => ca.Achievement)
-                    .Sum(ca => ca.Achievement.Xp)))
+                    .Sum(ca => ca.Achievement!.Xp)))
                 .ToListAsync();
         }
 
@@ -81,7 +80,7 @@ namespace AchieveClub.Server.Controllers
                 .Select(u => u.ToUserState(db.CompletedAchievements
                     .Where(ca => ca.UserRefId == u.Id)
                     .Include(ca => ca.Achievement)
-                    .Sum(ca => ca.Achievement.Xp)))
+                    .Sum(ca => ca.Achievement!.Xp)))
                 .ToListAsync();
         }
 
@@ -107,26 +106,26 @@ namespace AchieveClub.Server.Controllers
         [HttpPatch("change_role")]
         public async Task<ActionResult> ChangeUserRole([FromBody] ChangeRoleRequest request)
         {
-            if (db.Roles.Any(r => r.Id == request.roleId) == false)
+            if (db.Roles.Any(r => r.Id == request.RoleId) == false)
             {
-                logger.LogWarning("Role with roleId:{request.roleId} not found", request.roleId);
-                return NotFound($"Role with roleId:{request.roleId} not found");
+                logger.LogWarning("Role with roleId:{request.roleId} not found", request.RoleId);
+                return NotFound($"Role with roleId:{request.RoleId} not found");
             }
 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.userId);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId);
             if (user == null)
             {
-                logger.LogWarning("User with userId:{request.userId} not found", request.userId);
-                return NotFound($"User with userId:{request.userId} not found");
+                logger.LogWarning("User with userId:{request.userId} not found", request.UserId);
+                return NotFound($"User with userId:{request.UserId} not found");
             }
 
-            if (user.RoleRefId == request.roleId)
+            if (user.RoleRefId == request.RoleId)
             {
-                logger.LogWarning("This user:{request.userId} already has this role:{request.roleId}", request.userId, request.roleId);
-                return BadRequest($"This user:{request.userId} already has this role:{request.roleId}");
+                logger.LogWarning("This user:{request.userId} already has this role:{request.roleId}", request.UserId, request.RoleId);
+                return BadRequest($"This user:{request.UserId} already has this role:{request.RoleId}");
             } 
 
-            user.RoleRefId = request.roleId;
+            user.RoleRefId = request.RoleId;
 
             await db.SaveChangesAsync();
 

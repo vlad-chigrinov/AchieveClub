@@ -1,9 +1,6 @@
 ﻿using AchieveClub.Server.RepositoryItems;
-using AchieveClub.Server.Services;
-using AchieveClubServer.Data.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;

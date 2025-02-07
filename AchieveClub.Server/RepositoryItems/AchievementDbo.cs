@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using AchieveClub.Server.ApiContracts.Achievements.Response;
 
-namespace AchieveClubServer.Data.DTO;
+namespace AchieveClub.Server.RepositoryItems;
 
 [Table("Achievements")]
 public class AchievementDbo

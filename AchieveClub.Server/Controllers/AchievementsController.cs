@@ -1,6 +1,6 @@
 ﻿using AchieveClub.Server.ApiContracts.Achievements.Request;
 using AchieveClub.Server.ApiContracts.Achievements.Response;
-using AchieveClubServer.Data.DTO;
+using AchieveClub.Server.RepositoryItems;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;

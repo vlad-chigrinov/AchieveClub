@@ -9,8 +9,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using OpenTelemetry;
-using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -212,7 +210,7 @@ namespace AchieveClub.Server
             app.UseAuthentication();
             app.UseAuthorization();
 
-            //app.UseResponseCompression();
+            app.UseResponseCompression();
 
             app.UseOutputCache();
 

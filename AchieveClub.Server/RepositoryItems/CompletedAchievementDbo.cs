@@ -1,5 +1,4 @@
-﻿using AchieveClubServer.Data.DTO;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using AchieveClub.Server.ApiContracts.CompletedAchievements.Response;
 
 namespace AchieveClub.Server.RepositoryItems;

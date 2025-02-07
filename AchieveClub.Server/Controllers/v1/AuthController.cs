@@ -12,7 +12,6 @@ namespace AchieveClub.Server.Controllers.v1
     [ApiVersion("1.0")]
     [ApiController]
     public class AuthController(
-        ILogger<AuthController> logger,
         JwtTokenCreator jwtCreator,
         ApplicationContext db,
         HashService hasher,

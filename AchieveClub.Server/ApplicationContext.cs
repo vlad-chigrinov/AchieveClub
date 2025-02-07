@@ -1,5 +1,4 @@
 ﻿using AchieveClub.Server.RepositoryItems;
-using AchieveClubServer.Data.DTO;
 using Microsoft.EntityFrameworkCore;
 
 namespace AchieveClub.Server;
