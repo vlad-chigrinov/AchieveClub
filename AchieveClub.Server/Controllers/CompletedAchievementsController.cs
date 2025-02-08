@@ -99,13 +99,15 @@ namespace AchieveClub.Server.Controllers
 
             foreach (var achieveId in model.AchievementIds)
             {
-                var completedAchievement = await db.CompletedAchievements.FirstOrDefaultAsync(ca => ca.UserRefId == model.UserId && ca.AchieveRefId == achieveId, ct);
+                var completedAchievement = await db.CompletedAchievements.Include(ca=>ca.Achievement).FirstOrDefaultAsync(ca => ca.UserRefId == model.UserId && ca.AchieveRefId == achieveId, ct);
 
                 if (completedAchievement == null)
                 {
                     logger.LogWarning("AchieveId:{achieveId} is invalid or not completed!", achieveId);
                     return BadRequest($"AchieveId:{achieveId} is invalid or not completed!");
                 }
+                
+                user.Balance += completedAchievement.Achievement!.Xp;
 
                 db.CompletedAchievements.Remove(completedAchievement);
             }
@@ -159,6 +161,8 @@ namespace AchieveClub.Server.Controllers
                         return BadRequest($"This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once");
                     }
                 }
+
+                user.Balance += achievement.Xp;
 
                 achievements.Add(achievement);
             }

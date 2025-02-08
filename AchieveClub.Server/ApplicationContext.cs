@@ -14,6 +14,10 @@ public class ApplicationContext : DbContext
     public DbSet<AchievementDbo> Achievements { get; set; } = null!;
     public DbSet<CompletedAchievementDbo> CompletedAchievements { get; set; } = null!;
     public DbSet<RoleDbo> Roles { get; set; } = null!;
+    public DbSet<CategoryDbo> Categories { get; set; } = null!;
+    public DbSet<ProductDbo> Products { get; set; } = null!;
+    public DbSet<VariantDbo> Variants { get; set; } = null!;
+    public DbSet<ProductPhotoDbo> ProductPhotos { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,5 +34,15 @@ public class ApplicationContext : DbContext
         modelBuilder
             .Entity<CompletedAchievementDbo>()
             .HasOne(ca => ca.Supervisor);
+
+        modelBuilder
+            .Entity<VariantDbo>()
+            .HasOne(v => v.Product)
+            .WithMany(p => p.Variants);
+
+        modelBuilder
+            .Entity<ProductPhotoDbo>()
+            .HasOne(p => p.Variant)
+            .WithMany(v => v.ProductPhotos);
     }
 }
