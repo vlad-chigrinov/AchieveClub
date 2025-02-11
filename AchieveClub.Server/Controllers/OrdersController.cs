@@ -1,4 +1,6 @@
 ﻿using AchieveClub.Server.ApiContracts.Orders.Request;
+using AchieveClub.Server.ApiContracts.Orders.Response;
+using AchieveClub.Server.ApiContracts.Products.Response;
 using AchieveClub.Server.RepositoryItems;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +12,35 @@ namespace AchieveClub.Server.Controllers;
 [Route("api/[controller]")]
 public class OrdersController(ILogger<OrdersController> logger, ApplicationContext db) : ControllerBase
 {
+    [HttpGet]
+    [Authorize]
+    public async Task<ActionResult<List<OrderResponse>>> GetUserOrders()
+    {
+        var userIdString = HttpContext.User.Identity?.Name;
+        if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
+        {
+            logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}",
+                userIdString);
+            return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
+        }
+
+        if (await db.Users.AnyAsync(u => u.Id == userId) == false)
+        {
+            logger.LogWarning("User with userId:{userId} not found", userId);
+            return NotFound($"User with userId:{userId} not found");
+        }
+
+        return await db.Orders
+            .Where(o => o.UserId == userId)
+            .Include(o=>o.Product)
+            .Include(o=>o.DeliveryStatus)
+            .Include(o=>o.Variant)
+            .ThenInclude(v=>v!.DefaultPhoto)
+            .Select(o => new OrderResponse(o.Id, o.Product!.Type, o.Product.Name, o.Price, o.Variant!.Name,
+                o.Variant.DefaultPhoto!.Url, o.OrderDate, o.DeliveryStatus!.Title, o.DeliveryStatus.Color))
+            .ToListAsync();
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<ActionResult> CreateOrder([FromBody] CreateOrderRequest request)
@@ -57,7 +88,7 @@ public class OrdersController(ILogger<OrdersController> logger, ApplicationConte
             return BadRequest(
                 $"Out of stock. Product:{request.productId} Variant:{request.variantId}");
         }
-        
+
         user.Balance -= variant.Product!.Price;
 
         variant.Quantity--;
