@@ -12,7 +12,10 @@ public class CategoriesController(ApplicationContext db) : ControllerBase
     public async Task<ActionResult<List<SmallCategoryResponse>>> GetAll()
     {
         return await db.Categories
-            .Select(c => new SmallCategoryResponse(c.Id, c.Title, c.Color, c.EndDate))
+            .Where(c => 
+                c.StartDate == null || c.EndDate == null ? true
+                : c.StartDate <= DateTime.Now && c.EndDate >= DateTime.Now)
+            .Select(c => new SmallCategoryResponse(c.Id, c.Title, c.Color, c.StartDate, c.EndDate))
             .ToListAsync();
     }
 }
