@@ -18,6 +18,8 @@ public class ApplicationContext : DbContext
     public DbSet<ProductDbo> Products { get; set; } = null!;
     public DbSet<VariantDbo> Variants { get; set; } = null!;
     public DbSet<ProductPhotoDbo> ProductPhotos { get; set; } = null!;
+    public DbSet<OrderDBO> Orders { get; set; } = null!;
+    public DbSet<DeliveryStatusDBO> DeliveryStatuses { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
