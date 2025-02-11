@@ -49,7 +49,6 @@ namespace AchieveClub.Server
 
                     tracing.AddOtlpExporter(configure => configure.Endpoint = otlpExporterEndpoint);
                 });
-            builder.Logging.ClearProviders();
             builder.Logging.AddOpenTelemetry(logging =>
             {
                 logging.IncludeFormattedMessage = true;
