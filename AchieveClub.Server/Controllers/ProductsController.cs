@@ -24,7 +24,7 @@ public class ProductsController(ILogger<ProductsController> logger, ApplicationC
             .ThenInclude(v => v.DefaultPhoto)
             .Select(p => new SmallProductResponse(
                 p.Id, p.Type, p.Name, p.Price,
-                p.Variants!.Select(x=> new SmallVariantResponse(x.Id, x.Color, x.DefaultPhoto!.Url, x.Id == p.DefaultVariantId)).ToList()
+                p.Variants!.Select(v=> new SmallVariantResponse(v.Id, v.Color, v.DefaultPhoto!.Url, v.Id == p.DefaultVariantId, v.Quantity > 0)).ToList()
             )).ToListAsync();
     }
 
@@ -34,6 +34,7 @@ public class ProductsController(ILogger<ProductsController> logger, ApplicationC
         var product = await db.Products
             .Include(p => p.Variants)!
             .ThenInclude(v => v.ProductPhotos)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(p => p.Id == productId);
 
         if (product == null)
@@ -50,6 +51,7 @@ public class ProductsController(ILogger<ProductsController> logger, ApplicationC
                     v.Id == product.DefaultVariantId,
                     v.Name,
                     v.Color,
+                    v.Quantity > 0,
                     v.ProductPhotos!.Select(p => new VariantPhotoResponse(p.Id == v.DefaultPhotoId, p.Url)).ToList()
                 )).ToList()
         );

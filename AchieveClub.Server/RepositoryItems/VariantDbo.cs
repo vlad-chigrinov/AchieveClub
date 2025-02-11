@@ -10,6 +10,7 @@ public class VariantDbo
     public int Id { get; set; }
     public required string Name { get; set; }
     public required string Color { get; set; }
+    public int Quantity { get; set; }
     public int? DefaultPhotoId { get; set; }
     [ForeignKey(nameof(DefaultPhotoId))]
     public ProductPhotoDbo? DefaultPhoto { get; set; }
