@@ -20,13 +20,12 @@ public class ProductsController(ILogger<ProductsController> logger, ApplicationC
 
         return await db.Products
             .Where(p => p.CategoryId == categoryId)
-            .Include(p => p.DefaultVariant)
-            .ThenInclude(v => v!.DefaultPhoto)
+            .Include(p => p.Variants)!
+            .ThenInclude(v => v.DefaultPhoto)
             .Select(p => new SmallProductResponse(
                 p.Id, p.Type, p.Name, p.Price,
-                p.DefaultVariant!.DefaultPhoto!.Url,
-                p.Variants!.Select(v => v.Color).ToList())
-            ).ToListAsync();
+                p.Variants!.Select(x=> new SmallVariantResponse(x.Id, x.Color, x.DefaultPhoto!.Url, x.Id == p.DefaultVariantId)).ToList()
+            )).ToListAsync();
     }
 
     [HttpGet("{productId:int}")]
