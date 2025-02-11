@@ -49,13 +49,13 @@ namespace AchieveClub.Server.Controllers
 
             var fileTypes = new List<string> { ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif" };
 
-            if (fileTypes.Contains(fileInfo.Extension) == false)
+            if (fileTypes.Contains(fileInfo.Extension.ToLower()) == false)
             {
                 logger.LogWarning("File extension not supported: {fileInfo.Extension}. Supported extensions: {fileTypes}", fileInfo.Extension, fileTypes);
                 return BadRequest($"File extension not supported: {fileInfo.Extension}. Supported extensions: {fileTypes.Aggregate((a, b) => $"{a},{b}")}");
             }
 
-            var filePath = $"avatars/{Guid.NewGuid()}.webp";
+            var filePath = $"avatars/{Guid.NewGuid()}.jpeg";
 
             if (Path.Exists($"./wwwroot/{filePath}"))
             {
@@ -75,11 +75,11 @@ namespace AchieveClub.Server.Controllers
 
                 using (var fileStream = new FileStream($"./wwwroot/{filePath}", FileMode.CreateNew, FileAccess.Write))
                 {
-                    await image.SaveAsWebpAsync(fileStream);
+                    await image.SaveAsJpegAsync(fileStream);
                 }
             }
 
-            logger.LogInformation("File saved as .WEBP on: {filePath}", filePath);
+            logger.LogInformation("File saved as .jpeg on: {filePath}", filePath);
 
             user.Avatar = filePath;
             await db.SaveChangesAsync();
