@@ -54,17 +54,4 @@ public class ProductsController(ILogger<ProductsController> logger, ApplicationC
                 )).ToList()
         );
     }
-
-    [HttpPost("{productId:int}")]
-    [Authorize]
-    public async Task<ActionResult> BuyProduct([FromRoute] int productId, [FromQuery] int? variantId)
-    {
-        if (await db.Products.AnyAsync(p => p.Id == productId) == false)
-        {
-            logger.LogWarning("Product with productId:{productId} not found", productId);
-            return NotFound($"Product with productId:{productId} not found");
-        }
-
-        return NoContent();
-    }
 }
