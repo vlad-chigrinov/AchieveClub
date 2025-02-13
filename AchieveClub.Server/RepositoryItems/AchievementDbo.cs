@@ -13,6 +13,9 @@ public class AchievementDbo
     [MaxLength(1000)] public required string Description { get; set; }
     [MaxLength(4000)] public required string LogoURL { get; set; }
     public bool IsMultiple { get; set; }
+    public int? TagId { get; set; }
+    [ForeignKey("TagId")]
+    public TagDbo? Tag { get; set; }
 
-    public AchievementResponse ToResponse() => new AchievementResponse(Id, Xp, Title, Description, LogoURL, IsMultiple);
+    public AchievementResponse ToResponse() => new AchievementResponse(Id, Xp, Title, Description, LogoURL, IsMultiple, TagId);
 }

@@ -6,5 +6,6 @@ public record AchievementResponse(
     string Title,
     string Description,
     string LogoURL,
-    bool IsMultiple
+    bool IsMultiple,
+    int? TagId
 );

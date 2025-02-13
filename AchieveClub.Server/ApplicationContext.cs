@@ -20,6 +20,7 @@ public class ApplicationContext : DbContext
     public DbSet<ProductPhotoDbo> ProductPhotos { get; set; } = null!;
     public DbSet<OrderDBO> Orders { get; set; } = null!;
     public DbSet<DeliveryStatusDBO> DeliveryStatuses { get; set; } = null!;
+    public DbSet<TagDbo> Tags { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
