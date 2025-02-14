@@ -32,4 +32,3 @@ public class CompletedAchievementDbo
         };
     }
 }
-public record CompletedAchievementState(int AchieveId, int CompletionCount);

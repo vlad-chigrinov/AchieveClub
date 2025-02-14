@@ -14,16 +14,17 @@ namespace AchieveClub.Server.Controllers
         ApplicationContext db,
         IHubContext<AchieveHub> hub,
         ILogger<CompletedAchievementsController> logger
-        ) : ControllerBase
+    ) : ControllerBase
     {
         [Authorize]
         [HttpGet("current")]
-        public async Task<ActionResult<List<CompletedAchievementState>>> GetForCurrentUser()
+        public async Task<ActionResult<List<SmallCompletedAchievementResponse>>> GetForCurrentUser()
         {
             var userIdString = HttpContext.User.Identity?.Name;
             if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
             {
-                logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}", userIdString);
+                logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}",
+                    userIdString);
                 return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
             }
 
@@ -33,11 +34,31 @@ namespace AchieveClub.Server.Controllers
                 return NotFound($"User with userId:{userId} not found");
             }
 
-            return await db.CompletedAchievements
+            var completedAchievements = await db.CompletedAchievements
                 .Where(ca => ca.UserRefId == userId)
+                .Include(ca => ca.Achievement)
                 .GroupBy(ca => ca.AchieveRefId)
-                .Select(group => new CompletedAchievementState(group.Key, group.Count()))
                 .ToListAsync();
+
+            return completedAchievements.Select(group =>
+            {
+                var timeLimit = group.First().Achievement!.TimeLimitInDays;
+
+                if (timeLimit == null)
+                    return new SmallCompletedAchievementResponse(group.Key, group.Count(), null);
+
+                var lastCompletionDate = group.Select(ca => ca.DateOfCompletion).Max();
+
+                var newTryDate = lastCompletionDate.AddDays(timeLimit.Value);
+
+                if (DateTime.Now > newTryDate)
+                {
+                    return new SmallCompletedAchievementResponse(group.Key, group.Count(), null);
+                }
+
+                return new SmallCompletedAchievementResponse(group.Key, group.Count(),
+                    ((DateTimeOffset)newTryDate).ToUnixTimeSeconds());
+            }).ToList();
         }
 
         [HttpGet("{userId:int}/detailed")]
@@ -57,7 +78,7 @@ namespace AchieveClub.Server.Controllers
         }
 
         [HttpGet("{userId:int}")]
-        public async Task<ActionResult<List<CompletedAchievementState>>> GetByUserId([FromRoute] int userId)
+        public async Task<ActionResult<List<SmallCompletedAchievementResponse>>> GetByUserId([FromRoute] int userId)
         {
             if (await db.Users.AnyAsync(x => x.Id == userId) == false)
             {
@@ -65,22 +86,46 @@ namespace AchieveClub.Server.Controllers
                 return NotFound($"User with userId:{userId} not found");
             }
 
-            return await db.CompletedAchievements
+            var completedAchievements = await db.CompletedAchievements
                 .Where(ca => ca.UserRefId == userId)
+                .Include(ca => ca.Achievement)
                 .GroupBy(ca => ca.AchieveRefId)
-                .Select(group => new CompletedAchievementState(group.Key, group.Count()))
                 .ToListAsync();
+
+            return completedAchievements.Select(group =>
+            {
+                var timeLimit = group.First().Achievement!.TimeLimitInDays;
+
+                if (timeLimit == null)
+                    return new SmallCompletedAchievementResponse(group.Key, group.Count(), null);
+
+                var lastCompletionDate = group.Select(ca => ca.DateOfCompletion).Max();
+
+                var newTryDate = lastCompletionDate.AddDays(timeLimit.Value);
+
+                if (DateTime.Now > newTryDate)
+                {
+                    return new SmallCompletedAchievementResponse(group.Key, group.Count(), null);
+                }
+
+                return new SmallCompletedAchievementResponse(group.Key, group.Count(),
+                    ((DateTimeOffset)newTryDate).ToUnixTimeSeconds());
+            }).ToList();
         }
 
         [Authorize(Roles = "Supervisor, Admin")]
         [HttpDelete]
-        public async Task<ActionResult> CancelCompleteAchievements(CompleteAchievementRequest model, CancellationToken ct)
+        public async Task<ActionResult> CancelCompleteAchievements(CompleteAchievementRequest model,
+            CancellationToken ct)
         {
             var supervisorIdString = HttpContext.User.Identity?.Name;
             if (supervisorIdString == null || int.TryParse(supervisorIdString, out int supervisorId) == false)
             {
-                logger.LogWarning("Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}", supervisorIdString);
-                return NotFound($"Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}");
+                logger.LogWarning(
+                    "Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}",
+                    supervisorIdString);
+                return NotFound(
+                    $"Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}");
             }
 
             if (await db.Users.AnyAsync(x => x.Id == supervisorId, ct) == false)
@@ -99,14 +144,15 @@ namespace AchieveClub.Server.Controllers
 
             foreach (var achieveId in model.AchievementIds)
             {
-                var completedAchievement = await db.CompletedAchievements.Include(ca=>ca.Achievement).FirstOrDefaultAsync(ca => ca.UserRefId == model.UserId && ca.AchieveRefId == achieveId, ct);
+                var completedAchievement = await db.CompletedAchievements.Include(ca => ca.Achievement)
+                    .FirstOrDefaultAsync(ca => ca.UserRefId == model.UserId && ca.AchieveRefId == achieveId, ct);
 
                 if (completedAchievement == null)
                 {
                     logger.LogWarning("AchieveId:{achieveId} is invalid or not completed!", achieveId);
                     return BadRequest($"AchieveId:{achieveId} is invalid or not completed!");
                 }
-                
+
                 user.Balance += completedAchievement.Achievement!.Xp;
 
                 db.CompletedAchievements.Remove(completedAchievement);
@@ -124,8 +170,11 @@ namespace AchieveClub.Server.Controllers
             var supervisorIdString = HttpContext.User.Identity?.Name;
             if (supervisorIdString == null || int.TryParse(supervisorIdString, out int supervisorId) == false)
             {
-                logger.LogWarning("Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}", supervisorIdString);
-                return NotFound($"Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}");
+                logger.LogWarning(
+                    "Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}",
+                    supervisorIdString);
+                return NotFound(
+                    $"Access token not contains supervisorId or supervisorId is the wrong format: {supervisorIdString}");
             }
 
             if (await db.Users.AnyAsync(x => x.Id == supervisorId, ct) == false)
@@ -155,10 +204,40 @@ namespace AchieveClub.Server.Controllers
 
                 if (achievement.IsMultiple == false)
                 {
-                    if (await db.CompletedAchievements.AnyAsync(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id, ct))
+                    if (await db.CompletedAchievements.AnyAsync(
+                            ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id, ct))
                     {
-                        logger.LogWarning("This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once", achieveId, model.UserId);
-                        return BadRequest($"This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once");
+                        logger.LogWarning(
+                            "This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once",
+                            achieveId, model.UserId);
+                        return BadRequest(
+                            $"This achievement:{achieveId} has already been completed for this user:{model.UserId}. You cannot complete this achievement more than once");
+                    }
+                }
+
+                var timeLimit = achievement.TimeLimitInDays;
+
+                if (timeLimit != null)
+                {
+                    if (await db.CompletedAchievements
+                            .Where(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id)
+                            .AnyAsync(ct))
+                    {
+                        var lastCompletionDate = await db.CompletedAchievements
+                            .Where(ca => ca.UserRefId == user.Id && ca.AchieveRefId == achievement.Id)
+                            .Select(ca => ca.DateOfCompletion)
+                            .MaxAsync(ct);
+
+                        var newTryDate = lastCompletionDate.AddDays(timeLimit.Value);
+
+                        if (DateTime.Now < newTryDate)
+                        {
+                            logger.LogWarning(
+                                "Time limit for achievement:{achieveId} applies. User:{user.Id}. Last completion date: {lastCompletionDate}. Next try date: {newTryDate}.",
+                                achieveId, user.Id, lastCompletionDate, newTryDate);
+                            return BadRequest(
+                                $"Time limit for achievement:{achieveId} applies. User:{user.Id}. Last completion date: {lastCompletionDate}. Next try date: {newTryDate}.");
+                        }
                     }
                 }
 
@@ -184,6 +263,9 @@ namespace AchieveClub.Server.Controllers
             return NoContent();
         }
 
-        public record CompleteAchievementRequest([Required, Range(1, double.PositiveInfinity)] int UserId, [Required] List<int> AchievementIds);
+        public record CompleteAchievementRequest(
+            [Required, Range(1, double.PositiveInfinity)]
+            int UserId,
+            [Required] List<int> AchievementIds);
     }
 }
