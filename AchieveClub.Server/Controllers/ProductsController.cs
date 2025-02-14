@@ -1,6 +1,7 @@
 ﻿using AchieveClub.Server.ApiContracts.Products.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 
 namespace AchieveClub.Server.Controllers;
@@ -10,6 +11,7 @@ namespace AchieveClub.Server.Controllers;
 public class ProductsController(ILogger<ProductsController> logger, ApplicationContext db) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(Duration = (3 * 60), Tags = ["achievements"])]
     public async Task<ActionResult<List<SmallProductResponse>>> GetByCategory([FromQuery] int categoryId)
     {
         if (db.Categories.Any(x => x.Id == categoryId) == false)
@@ -29,6 +31,7 @@ public class ProductsController(ILogger<ProductsController> logger, ApplicationC
     }
 
     [HttpGet("{productId:int}")]
+    [OutputCache(Duration = (3 * 60), Tags = ["achievements"])]
     public async Task<ActionResult<ProductResponse>> GetById([FromRoute] int productId)
     {
         var product = await db.Products

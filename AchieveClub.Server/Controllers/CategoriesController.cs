@@ -1,5 +1,6 @@
 ﻿using AchieveClub.Server.ApiContracts.Categories.Response;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 
 namespace AchieveClub.Server.Controllers;
@@ -9,13 +10,26 @@ namespace AchieveClub.Server.Controllers;
 public class CategoriesController(ApplicationContext db) : ControllerBase
 {
     [HttpGet]
+    [OutputCache(Duration = (3 * 60), Tags = ["achievements"])]
     public async Task<ActionResult<List<SmallCategoryResponse>>> GetAll()
     {
-        return await db.Categories
-            .Where(c => 
-                c.StartDate == null || c.EndDate == null ? true
-                : c.StartDate <= DateTime.Now && c.EndDate >= DateTime.Now)
-            .Select(c => new SmallCategoryResponse(c.Id, c.Title, c.Color, c.StartDate, c.EndDate))
-            .ToListAsync();
+        var categories = await db.Categories.ToListAsync();
+
+        return categories
+            .Select(category =>
+            {
+                var available = category.StartDate == null || category.EndDate == null ||
+                                category.StartDate <= DateTime.Now && category.EndDate >= DateTime.Now;
+                return new SmallCategoryResponse(
+                    category.Id,
+                    category.Title,
+                    category.Color,
+                    category.StartDate,
+                    category.EndDate,
+                    available ? category.AvailableBanner : category.UnavailableBanner,
+                    available
+                );
+            })
+            .ToList();
     }
 }
