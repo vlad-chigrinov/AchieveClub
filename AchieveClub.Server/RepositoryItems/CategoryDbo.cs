@@ -12,4 +12,8 @@ public class CategoryDbo
     public string? Color { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+    [MaxLength(1000)]
+    public string? AvailableBanner  { get; set; }
+    [MaxLength(1000)]
+    public string? UnavailableBanner  { get; set; }
 }
