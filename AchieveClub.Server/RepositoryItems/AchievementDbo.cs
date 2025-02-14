@@ -16,6 +16,7 @@ public class AchievementDbo
     public int? TagId { get; set; }
     [ForeignKey("TagId")]
     public TagDbo? Tag { get; set; }
+    public int? TimeLimitInDays { get; set; }
 
     public AchievementResponse ToResponse() => new AchievementResponse(Id, Xp, Title, Description, LogoURL, IsMultiple, TagId);
 }
