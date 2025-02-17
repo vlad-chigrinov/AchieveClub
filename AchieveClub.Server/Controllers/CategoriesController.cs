@@ -18,8 +18,9 @@ public class CategoriesController(ApplicationContext db) : ControllerBase
         return categories
             .Select(category =>
             {
-                var available = category.StartDate == null || category.EndDate == null ||
-                                category.StartDate <= DateTime.Now && category.EndDate >= DateTime.Now;
+                var available = (category.StartDate == null || category.EndDate == null ||
+                                 category.StartDate <= DateTime.Now && category.EndDate >= DateTime.Now) &&
+                                db.Products.Any(p=>p.CategoryId == category.Id);
                 return new SmallCategoryResponse(
                     category.Id,
                     category.Title,
