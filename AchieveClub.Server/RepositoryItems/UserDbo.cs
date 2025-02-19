@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using AchieveClub.Server.ApiContracts.Users;
 
 namespace AchieveClub.Server.RepositoryItems;
 
@@ -17,12 +18,6 @@ public class UserDbo
     public int RoleRefId { get; set; }
     [ForeignKey(nameof(RoleRefId))] public required RoleDbo Role { get; set; }
 
-    public UserState ToUserState(int xpSum) => new UserState(Id, FirstName, LastName, Avatar, xpSum);
+    public UserResponse ToUserState(int xpSum) => new UserResponse(Id, FirstName, LastName, Avatar, xpSum);
+    public CurrentUserResponse ToCurrentUserState(int xpSum) => new CurrentUserResponse(Id, FirstName, LastName, Avatar, xpSum, Email);
 }
-
-public record UserState(
-    int Id,
-    string FirstName,
-    string LastName,
-    string Avatar,
-    int XpSum);

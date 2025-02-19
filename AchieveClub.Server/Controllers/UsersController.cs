@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using AchieveClub.Server.ApiContracts.Users;
 using AchieveClub.Server.Services;
 
 namespace AchieveClub.Server.Controllers
@@ -23,7 +24,7 @@ namespace AchieveClub.Server.Controllers
 
         [Authorize]
         [HttpGet("current")]
-        public async Task<ActionResult<UserState>> GetCurrent()
+        public async Task<ActionResult<CurrentUserResponse>> GetCurrent()
         {
             var userIdString = HttpContext.User.Identity?.Name;
             if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
@@ -43,11 +44,11 @@ namespace AchieveClub.Server.Controllers
                 .Include(ca => ca.Achievement)
                 .SumAsync(ca => ca.Achievement!.Xp);
 
-            return user.ToUserState(xpSum);
+            return user.ToCurrentUserState(xpSum);
         }
 
         [HttpGet("{userId}")]
-        public async Task<ActionResult<UserState>> GetById([FromRoute] int userId)
+        public async Task<ActionResult<UserResponse>> GetById([FromRoute] int userId)
         {
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null)
@@ -66,7 +67,7 @@ namespace AchieveClub.Server.Controllers
 
         [HttpGet]
         [OutputCache(Duration = (3 * 60), Tags = ["users"])]
-        public async Task<ActionResult<List<UserState>>> GetStudents(CancellationToken ct)
+        public async Task<ActionResult<List<UserResponse>>> GetStudents(CancellationToken ct)
         {
             return await db.Users
                 .Include(u => u.Role)
@@ -79,7 +80,7 @@ namespace AchieveClub.Server.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<ActionResult<List<UserState>>> GetAll(CancellationToken ct)
+        public async Task<ActionResult<List<UserResponse>>> GetAll(CancellationToken ct)
         {
             return await db.Users
                 .Select(u => u.ToUserState(db.CompletedAchievements
