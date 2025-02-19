@@ -66,7 +66,7 @@ namespace AchieveClub.Server.Controllers
 
         [HttpGet]
         [OutputCache(Duration = (3 * 60), Tags = ["users"])]
-        public async Task<ActionResult<List<UserState>>> GetStudents()
+        public async Task<ActionResult<List<UserState>>> GetStudents(CancellationToken ct)
         {
             return await db.Users
                 .Include(u => u.Role)
@@ -75,7 +75,7 @@ namespace AchieveClub.Server.Controllers
                     .Where(ca => ca.UserRefId == u.Id)
                     .Include(ca => ca.Achievement)
                     .Sum(ca => ca.Achievement!.Xp)))
-                .ToListAsync();
+                .ToListAsync(ct);
         }
 
         [HttpGet("all")]
@@ -86,7 +86,7 @@ namespace AchieveClub.Server.Controllers
                     .Where(ca => ca.UserRefId == u.Id)
                     .Include(ca => ca.Achievement)
                     .Sum(ca => ca.Achievement!.Xp)))
-                .ToListAsync();
+                .ToListAsync(ct);
         }
 
         [Authorize(Roles = "Admin")]
