@@ -1,0 +1,18 @@
+meta {
+  name: Change Email
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{base_url}}/users/change_email
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "proofCode": 2094,
+    "emailAddress": "example@email.com"
+  }
+}

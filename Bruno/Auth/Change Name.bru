@@ -1,0 +1,17 @@
+meta {
+  name: Change Name
+  type: http
+  seq: 11
+}
+
+patch {
+  url: {{base_url}}/users/change_name
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "firstName" : "Влад"
+  }
+}

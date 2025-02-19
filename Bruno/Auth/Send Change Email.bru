@@ -1,0 +1,15 @@
+meta {
+  name: Send Change Email
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/email/change_email
+  body: json
+  auth: none
+}
+
+body:json {
+  "vladislav.chigrinov@gmail.com"
+}

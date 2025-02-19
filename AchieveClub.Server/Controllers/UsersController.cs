@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using AchieveClub.Server.Services;
 
 namespace AchieveClub.Server.Controllers
 {
@@ -11,10 +12,14 @@ namespace AchieveClub.Server.Controllers
     [Route("api/[controller]")]
     public class UsersController(
         ApplicationContext db,
-        ILogger<UsersController> logger
+        ILogger<UsersController> logger,
+        EmailProofService emailProof
         ) : ControllerBase
     {
         public record ChangeRoleRequest([Required] int UserId, [Required] int RoleId);
+
+        public record ChangeEmailRequest([Required] int ProofCode, [Required, EmailAddress] string EmailAddress);
+        public record ChangeNameRequest(string? FirstName, string? LastName);
 
         [Authorize]
         [HttpGet("current")]
@@ -98,6 +103,62 @@ namespace AchieveClub.Server.Controllers
             db.Users.Remove(user);
 
             await db.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPatch("change_name")]
+        public async Task<ActionResult> ChangeName([FromBody] ChangeNameRequest request, CancellationToken ct)
+        {
+            var userIdString = HttpContext.User.Identity?.Name;
+            if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
+            {
+                logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}",
+                    userIdString);
+                return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
+            }
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+            if (user == null)
+            {
+                logger.LogWarning("User with userId:{userId} not found", userId);
+                return NotFound($"User with userId:{userId} not found");
+            }
+
+            if (request.FirstName is { Length: >= 2 }) user.FirstName = request.FirstName;
+            if (request.LastName is { Length: >= 5 }) user.LastName = request.LastName;
+
+            await db.SaveChangesAsync(ct);
+            
+            return  NoContent();
+        }
+
+        [Authorize]
+        [HttpPatch("change_email")]
+        public async Task<ActionResult> ChangeEmail([FromBody] ChangeEmailRequest request, CancellationToken ct)
+        {
+            var userIdString = HttpContext.User.Identity?.Name;
+            if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
+            {
+                logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}",
+                    userIdString);
+                return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
+            }
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+            if (user == null)
+            {
+                logger.LogWarning("User with userId:{userId} not found", userId);
+                return NotFound($"User with userId:{userId} not found");
+            }
+            
+            if (emailProof.ValidateProofCode(request.EmailAddress, request.ProofCode) == false)
+                return Unauthorized();
+
+            user.Email = request.EmailAddress;
+
+            await db.SaveChangesAsync(ct);
 
             return NoContent();
         }
