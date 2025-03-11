@@ -109,6 +109,30 @@ namespace AchieveClub.Server.Controllers
         }
 
         [Authorize]
+        [HttpDelete]
+        public async Task<ActionResult> DeleteMyData(CancellationToken ct)
+        {
+            var userIdString = HttpContext.User.Identity?.Name;
+            if (userIdString == null || int.TryParse(userIdString, out int userId) == false)
+            {
+                logger.LogWarning("Access token not contains userId or userId is the wrong format: {userIdString}", userIdString);
+                return NotFound($"Access token not contains userId or userId is the wrong format: {userIdString}");
+            }
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+            if (user == null)
+            {
+                logger.LogWarning("User with userId:{userId} not found", userId);
+                return NotFound($"User with userId:{userId} not found");
+            }
+
+            db.Users.Remove(user);
+
+            await db.SaveChangesAsync(ct);
+
+            return NoContent();
+        }
+
+        [Authorize]
         [HttpPatch("change_name")]
         public async Task<ActionResult> ChangeName([FromBody] ChangeNameRequest request, CancellationToken ct)
         {
